@@ -30,9 +30,15 @@ export const color = {
   tintAccent: '#E8FBF3',
   borderSubtle: '#E3E5E9',
 
-  edgeNeutral: '#9FA3A7',
+  /**
+   * Стрелки в референсах Нетологии ЗЕЛЁНЫЕ (замерено: #47C397 в image (25), #31C2A7 в image (3)),
+   * а не серые. Поэтому основной цвет связи — брендовый зелёный.
+   */
   edgeAccent: '#4BD0A0',
+  edgeNeutral: '#9FA3A7', // оставлен для вторичных/приглушённых связей
   edgeLabelBg: '#FFFFFF',
+  groupStroke: '#9FA3A7',
+  groupLabel: '#808080',
 } as const
 
 export const font = {

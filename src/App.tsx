@@ -5,6 +5,7 @@ import { measurer } from './diagram/measure/textMetrics'
 import { measureNodes, type NodeBox } from './diagram/measure/measureNode'
 import { layoutDiagram, type Layout } from './diagram/layout/layoutElk'
 import { DiagramSvg } from './diagram/render/DiagramSvg'
+import { ZoomPane } from './diagram/render/ZoomPane'
 import { toSvgString, downloadSvg, downloadBlob } from './diagram/export/toSvgString'
 import { svgToPngBlob } from './diagram/export/toPng'
 import { font, type as typography } from './diagram/theme'
@@ -183,9 +184,11 @@ export function App() {
             border: '1px solid #E3E5E9',
             borderRadius: 12,
             padding: 16,
-            overflow: 'auto',
+            overflow: 'hidden',
             minHeight: 0,
             background: '#fff',
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
           {parse.status === 'error' && (
@@ -201,7 +204,7 @@ export function App() {
           {parse.status === 'idle' && <div style={{ color: '#808080' }}>Разбираю…</div>}
 
           {parse.status === 'ok' && (
-            <div style={{ display: 'grid', gap: 12 }}>
+            <div style={{ display: 'grid', gap: 12, flex: 1, minHeight: 0, gridTemplateRows: parse.ir.warnings.length ? 'auto 1fr' : '1fr' }}>
               {parse.ir.warnings.map((w) => (
                 <div
                   key={w}
@@ -211,7 +214,9 @@ export function App() {
                 </div>
               ))}
               {boxes && layout ? (
-                <DiagramSvg ir={parse.ir} boxes={boxes} layout={layout} svgRef={svgRef} />
+                <ZoomPane width={layout.width} height={layout.height}>
+                  <DiagramSvg ir={parse.ir} boxes={boxes} layout={layout} svgRef={svgRef} />
+                </ZoomPane>
               ) : (
                 <div style={{ color: '#808080' }}>Считаю раскладку…</div>
               )}
@@ -226,7 +231,9 @@ export function App() {
           <button type="button" style={btnStyle} disabled={!ready || busy !== null} onClick={handleSvg}>
             {busy === 'svg' ? 'Готовлю SVG…' : 'Скачать SVG'}
           </button>
-          <span style={{ color: '#808080', fontSize: 12 }}>PNG 2×, белый фон</span>
+          <span style={{ color: '#808080', fontSize: 12 }}>
+            PNG 2×, белый фон · колесо — зум, перетаскивание — панорама, двойной клик — вписать
+          </span>
           {exportError && <span style={{ color: '#B93A33', fontSize: 12 }}>{exportError}</span>}
         </div>
       </section>

@@ -47,11 +47,45 @@ export function DiagramSvg({ ir, boxes, layout, svgRef }: Props) {
       aria-label="Схема"
     >
       <defs>
-        <ArrowMarker id={markerId} fill={color.edgeNeutral} />
+        <ArrowMarker id={markerId} fill={color.edgeAccent} />
         <ArrowMarker id={markerAccentId} fill={color.edgeAccent} />
       </defs>
 
       <rect x={0} y={0} width={layout.width} height={layout.height} fill={color.canvas} />
+
+      {/* группы (subgraph): пунктирный контейнер вокруг своих узлов */}
+      <g>
+        {ir.groups.map((group) => {
+          const bbox = groupBBox(group.nodeIds, layout)
+          if (!bbox) return null
+          const label = group.label?.lines.map((l) => l.map((r) => r.text).join('')).join(' ') ?? ''
+          return (
+            <g key={group.id}>
+              <rect
+                x={bbox.x}
+                y={bbox.y}
+                width={bbox.width}
+                height={bbox.height}
+                rx={size.radius + 4}
+                fill="none"
+                stroke={color.groupStroke}
+                strokeWidth={1}
+                strokeDasharray="6 4"
+              />
+              {label && (
+                <text
+                  x={bbox.x + 12}
+                  y={bbox.y + 16}
+                  fontSize={14}
+                  fill={color.groupLabel}
+                >
+                  {label}
+                </text>
+              )}
+            </g>
+          )
+        })}
+      </g>
 
       {/* рёбра рисуем до узлов, чтобы линии уходили под фигуры */}
       <g>
@@ -67,7 +101,7 @@ export function DiagramSvg({ ir, boxes, layout, svgRef }: Props) {
               key={edge.id}
               d={buildOrthogonalPath(placement.points)}
               fill="none"
-              stroke={color.edgeNeutral}
+              stroke={color.edgeAccent}
               strokeWidth={strokeWidth}
               strokeDasharray={dash}
               strokeLinejoin="round"
@@ -128,6 +162,20 @@ export function DiagramSvg({ ir, boxes, layout, svgRef }: Props) {
       </g>
     </svg>
   )
+}
+
+/** Габарит группы = bounding box её узлов + отступ. ELK про группы не знает, считаем после раскладки. */
+function groupBBox(nodeIds: string[], layout: Layout) {
+  const placed = nodeIds.map((id) => layout.nodes[id]).filter(Boolean)
+  if (!placed.length) return null
+
+  const pad = 24
+  const minX = Math.min(...placed.map((n) => n.x)) - pad
+  const minY = Math.min(...placed.map((n) => n.y)) - pad - 8
+  const maxX = Math.max(...placed.map((n) => n.x + n.width)) + pad
+  const maxY = Math.max(...placed.map((n) => n.y + n.height)) + pad
+
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
 }
 
 function ArrowMarker({ id, fill }: { id: string; fill: string }) {
