@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { parseMermaid, type ParseError } from './diagram/parse/parseMermaid'
 import { textBlockToString } from './diagram/parse/label'
 import type { DiagramIR } from './diagram/ir'
+import { measurer } from './diagram/measure/textMetrics'
+import { measureNodes } from './diagram/measure/measureNode'
+import { font, type as typography } from './diagram/theme'
 
 const DEFAULT_SOURCE = `graph TD
     A[Пользователь] --> B{Авторизован?}
@@ -142,8 +145,16 @@ export function App() {
   )
 }
 
-/** Пока рендера нет — показываем разобранную модель, чтобы этап 2 был проверяем глазами. */
+/** Пока рендера нет — показываем разобранную модель + посчитанные габариты узлов. */
 function IRPreview({ ir }: { ir: DiagramIR }) {
+  const boxes = useMemo(
+    () =>
+      measureNodes(ir, { family: font.family, weight: font.weight.regular, size: typography.node.size }, measurer),
+    [ir],
+  )
+  const shrunk = ir.nodes.filter((n) => (boxes[n.id]?.fit.fontSize ?? 0) < typography.node.size).length
+  const truncated = ir.nodes.filter((n) => boxes[n.id]?.fit.truncated).length
+
   return (
     <div style={{ display: 'grid', gap: 16, fontSize: 13 }}>
       {ir.warnings.map((w) => (
@@ -153,13 +164,29 @@ function IRPreview({ ir }: { ir: DiagramIR }) {
       ))}
 
       <div>
-        <div style={{ fontWeight: 600, marginBottom: 6 }}>Узлы</div>
+        <div style={{ fontWeight: 600, marginBottom: 6 }}>
+          Узлы{' '}
+          <span style={{ fontWeight: 400, color: '#808080' }}>
+            {shrunk ? `· ${shrunk} с уменьшенным шрифтом` : '· шрифт везде базовый'}
+            {truncated ? ` · ${truncated} обрезано` : ''}
+          </span>
+        </div>
         <ul style={{ margin: 0, paddingLeft: 18 }}>
-          {ir.nodes.map((n) => (
-            <li key={n.id}>
-              <code>{n.id}</code> — {n.role}: «{textBlockToString(n.label)}»
-            </li>
-          ))}
+          {ir.nodes.map((n) => {
+            const box = boxes[n.id]
+            return (
+              <li key={n.id}>
+                <code>{n.id}</code> — {n.role}: «{textBlockToString(n.label)}»
+                {box && (
+                  <span style={{ color: '#808080' }}>
+                    {' '}
+                    [{Math.round(box.width)}×{Math.round(box.height)}, {box.fit.fontSize} px
+                    {box.fit.lines.length ? `, ${box.fit.lines.length} стр.` : ''}]
+                  </span>
+                )}
+              </li>
+            )
+          })}
         </ul>
       </div>
 
