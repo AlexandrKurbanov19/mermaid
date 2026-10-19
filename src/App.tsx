@@ -1,63 +1,195 @@
-import { useEffect, useState } from 'react'
-import { Button } from '@salutejs/sdds-netology'
+import { useEffect, useMemo, useState } from 'react'
+import { parseMermaid, type ParseError } from './diagram/parse/parseMermaid'
+import { textBlockToString } from './diagram/parse/label'
+import type { DiagramIR } from './diagram/ir'
 
-/** Токены, которые нужны для схем. Читаем вычисленные CSS-переменные темы. */
-const TOKENS = [
-  '--on-light-surface-accent',
-  '--on-light-surface-accent-minor',
-  '--on-light-text-primary',
-  '--on-light-text-secondary',
-  '--on-light-surface-solid-primary',
-  '--on-light-surface-solid-secondary',
-  '--on-light-surface-solid-tertiary',
-  '--on-light-surface-solid-card',
-  '--on-light-outline-accent',
-  '--on-light-outline-transparent-secondary',
-  '--on-light-surface-transparent-secondary',
-] as const
+const DEFAULT_SOURCE = `graph TD
+    A[Пользователь] --> B{Авторизован?}
+    B -- да --> C[Открыть дашборд]
+    B -- нет --> D[Показать логин]
+    D --> B`
+
+type State =
+  | { status: 'idle' }
+  | { status: 'parsing' }
+  | { status: 'ok'; ir: DiagramIR }
+  | { status: 'error'; error: ParseError }
+
+/** «4 узла», «5 узлов», «1 узел» */
+function plural(n: number, one: string, few: string, many: string): string {
+  const mod10 = n % 10
+  const mod100 = n % 100
+  if (mod10 === 1 && mod100 !== 11) return `${n} ${one}`
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${n} ${few}`
+  return `${n} ${many}`
+}
+
+/** Дебаунс, чтобы не парсить на каждый символ. */
+function useDebounced<T>(value: T, delay = 300): T {
+  const [debounced, setDebounced] = useState(value)
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay)
+    return () => clearTimeout(id)
+  }, [value, delay])
+  return debounced
+}
 
 export function App() {
-  const [values, setValues] = useState<Record<string, string>>({})
+  const [source, setSource] = useState(DEFAULT_SOURCE)
+  const debounced = useDebounced(source)
+  const [state, setState] = useState<State>({ status: 'idle' })
 
   useEffect(() => {
-    const cs = getComputedStyle(document.documentElement)
-    const next: Record<string, string> = {}
-    for (const t of TOKENS) next[t] = cs.getPropertyValue(t).trim() || '(пусто)'
-    setValues(next)
-  }, [])
+    let cancelled = false
+    setState((prev) => (prev.status === 'ok' ? prev : { status: 'parsing' }))
+
+    parseMermaid(debounced).then((res) => {
+      if (cancelled) return
+      setState(res.ok ? { status: 'ok', ir: res.ir } : { status: 'error', error: res.error })
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [debounced])
+
+  const summary = useMemo(() => {
+    if (state.status !== 'ok') return null
+    const { ir } = state
+    return {
+      direction: ir.direction,
+      nodes: ir.nodes.length,
+      edges: ir.edges.length,
+      groups: ir.groups.length,
+    }
+  }, [state])
 
   return (
-    <div style={{ padding: 24, display: 'grid', gap: 24, maxWidth: 760 }}>
-      <h1 style={{ margin: 0, fontSize: 28 }}>DS подключён</h1>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-        <Button text="Кнопка из DS" view="accent" />
-        <Button text="Вторичная" view="secondary" />
-      </div>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, padding: 24, height: '100vh' }}>
+      {/* левая колонка — разметка */}
+      <section style={{ display: 'grid', gridTemplateRows: 'auto 1fr', gap: 8, minHeight: 0 }}>
+        <h1 style={{ margin: 0, fontSize: 20 }}>Mermaid</h1>
+        <textarea
+          value={source}
+          onChange={(e) => setSource(e.target.value)}
+          spellCheck={false}
+          style={{
+            width: '100%',
+            height: '100%',
+            resize: 'none',
+            padding: 12,
+            border: '1px solid #D0D7DD',
+            borderRadius: 12,
+            fontFamily: "'Roboto Mono', ui-monospace, monospace",
+            fontSize: 13,
+            lineHeight: 1.6,
+            outline: 'none',
+          }}
+        />
+      </section>
 
-      <table style={{ borderCollapse: 'collapse', fontSize: 13 }}>
-        <tbody>
-          {TOKENS.map((t) => (
-            <tr key={t}>
-              <td style={{ borderBottom: '1px solid #e3e5e9', padding: '6px 12px 6px 0', fontFamily: 'monospace' }}>
-                {t}
-              </td>
-              <td style={{ borderBottom: '1px solid #e3e5e9', padding: '6px 12px' }}>{values[t] ?? '…'}</td>
-              <td style={{ borderBottom: '1px solid #e3e5e9', padding: '6px 0' }}>
-                <span
-                  style={{
-                    display: 'inline-block',
-                    width: 28,
-                    height: 16,
-                    borderRadius: 4,
-                    background: values[t] || 'transparent',
-                    border: '1px solid #d0d7dd',
-                  }}
-                />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* правая колонка — превью (SVG будет на следующем этапе) */}
+      <section style={{ display: 'grid', gridTemplateRows: 'auto 1fr auto', gap: 12, minHeight: 0 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <h1 style={{ margin: 0, fontSize: 20 }}>Предпросмотр</h1>
+          {summary && (
+            <span style={{ color: '#808080', fontSize: 13 }}>
+              {summary.direction} · {plural(summary.nodes, 'узел', 'узла', 'узлов')} ·{' '}
+              {plural(summary.edges, 'связь', 'связи', 'связей')}
+              {summary.groups ? ` · ${plural(summary.groups, 'группа', 'группы', 'групп')}` : ''}
+            </span>
+          )}
+        </div>
+
+        <div
+          style={{
+            border: '1px solid #E3E5E9',
+            borderRadius: 12,
+            padding: 16,
+            overflow: 'auto',
+            minHeight: 0,
+            background: '#fff',
+          }}
+        >
+          {state.status === 'error' && (
+            <div style={{ color: '#B93A33', fontSize: 14 }}>
+              <strong>Не удалось разобрать разметку</strong>
+              <div style={{ marginTop: 6 }}>
+                {state.error.line ? `Строка ${state.error.line}: ` : ''}
+                {state.error.message}
+              </div>
+            </div>
+          )}
+
+          {state.status !== 'error' && state.status !== 'ok' && <div style={{ color: '#808080' }}>Разбираю…</div>}
+
+          {state.status === 'ok' && <IRPreview ir={state.ir} />}
+        </div>
+
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button disabled style={btnStyle}>
+            Скачать PNG
+          </button>
+          <button disabled style={btnStyle}>
+            Скачать SVG
+          </button>
+          <span style={{ alignSelf: 'center', color: '#808080', fontSize: 12 }}>
+            кнопки включатся после этапа рендера
+          </span>
+        </div>
+      </section>
     </div>
   )
+}
+
+/** Пока рендера нет — показываем разобранную модель, чтобы этап 2 был проверяем глазами. */
+function IRPreview({ ir }: { ir: DiagramIR }) {
+  return (
+    <div style={{ display: 'grid', gap: 16, fontSize: 13 }}>
+      {ir.warnings.map((w) => (
+        <div key={w} style={{ background: '#FFF7E6', border: '1px solid #F3D9A4', borderRadius: 8, padding: '8px 10px' }}>
+          {w}
+        </div>
+      ))}
+
+      <div>
+        <div style={{ fontWeight: 600, marginBottom: 6 }}>Узлы</div>
+        <ul style={{ margin: 0, paddingLeft: 18 }}>
+          {ir.nodes.map((n) => (
+            <li key={n.id}>
+              <code>{n.id}</code> — {n.role}: «{textBlockToString(n.label)}»
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <div style={{ fontWeight: 600, marginBottom: 6 }}>Связи</div>
+        <ul style={{ margin: 0, paddingLeft: 18 }}>
+          {ir.edges.map((e) => (
+            <li key={e.id}>
+              <code>
+                {e.from} → {e.to}
+              </code>{' '}
+              ({e.kind}, {e.arrow})
+              {e.label ? ` — «${textBlockToString(e.label)}»` : ''}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+const btnStyle: React.CSSProperties = {
+  height: 40,
+  padding: '0 16px',
+  borderRadius: 12,
+  border: 'none',
+  background: '#4BD0A0',
+  color: '#27292D',
+  fontFamily: 'inherit',
+  fontSize: 14,
+  cursor: 'pointer',
+  opacity: 0.5,
 }
