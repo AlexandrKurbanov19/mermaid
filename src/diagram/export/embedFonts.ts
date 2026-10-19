@@ -6,11 +6,20 @@
  * Поэтому @font-face с base64 внутри самого SVG.
  */
 
+import regularUrl from '../../theme/fonts/SBSansText-Regular.woff2?url'
+import mediumUrl from '../../theme/fonts/SBSansText-Medium.woff2?url'
+import semiboldUrl from '../../theme/fonts/SBSansText-Semibold.woff2?url'
+import boldUrl from '../../theme/fonts/SBSansText-Bold.woff2?url'
+
+/**
+ * URL берём через `?url`, чтобы Vite подставил правильный base
+ * (на GitHub Pages проект живёт в подпапке `/<repo>/`, и абсолютный `/fonts/...` там ломается).
+ */
 const FONT_FILES = [
-  { weight: 400, file: 'SBSansText-Regular.woff2' },
-  { weight: 500, file: 'SBSansText-Medium.woff2' },
-  { weight: 600, file: 'SBSansText-Semibold.woff2' },
-  { weight: 700, file: 'SBSansText-Bold.woff2' },
+  { weight: 400, url: regularUrl },
+  { weight: 500, url: mediumUrl },
+  { weight: 600, url: semiboldUrl },
+  { weight: 700, url: boldUrl },
 ] as const
 
 let cache: string | null = null
@@ -30,9 +39,9 @@ export async function getEmbeddedFontCss(): Promise<string> {
   if (cache) return cache
 
   const faces = await Promise.all(
-    FONT_FILES.map(async ({ weight, file }) => {
-      const res = await fetch(`/fonts/${file}`)
-      if (!res.ok) throw new Error(`не удалось загрузить шрифт ${file}: ${res.status}`)
+    FONT_FILES.map(async ({ weight, url }) => {
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(`не удалось загрузить шрифт ${url}: ${res.status}`)
       const base64 = toBase64(await res.arrayBuffer())
       return `@font-face{font-family:'SB Sans Text';font-style:normal;font-weight:${weight};src:url(data:font/woff2;base64,${base64}) format('woff2');}`
     }),
