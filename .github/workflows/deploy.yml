@@ -41,10 +41,9 @@ jobs:
           VITE_BASE: /${{ github.event.repository.name }}/
         run: npm run build
 
+      # Требует, чтобы Pages уже был включён: Settings -> Pages -> Source: GitHub Actions.
+      # Автовключение (enablement: true) не работает — у GITHUB_TOKEN нет админских прав.
       - uses: actions/configure-pages@v5
-        with:
-          # попробовать включить Pages автоматически, если ещё не включён
-          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
