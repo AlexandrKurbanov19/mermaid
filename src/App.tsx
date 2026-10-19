@@ -100,7 +100,6 @@ export function App() {
     [timelineIr, fontSpec],
   )
 
-  const ready = !!svgRef.current && parse.status === 'ok' && (!!layout || !!timelineLayout)
 
   const stats = useMemo(() => {
     if (flowchartIr && boxes) {
@@ -168,6 +167,10 @@ export function App() {
     : timelineLayout
       ? { width: timelineLayout.width, height: timelineLayout.height }
       : null
+
+  // НЕ использовать svgRef в рендере: реф не триггерит перерисовку, и после первого
+  // рендера кнопки оставались задизейбленными до следующего взаимодействия.
+  const ready = parse.status === 'ok' && !!diagram
 
   return (
     <div className="app">

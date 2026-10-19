@@ -110,9 +110,10 @@ export function DiagramSvg({ ir, boxes, layout, svgRef }: Props) {
 
       {/* рёбра рисуем до узлов, чтобы линии уходили под фигуры */}
       <g>
-        {edgeGeometry.map((edge, i) => {
+        {edgeGeometry.map((edge) => {
           if (edge.points.length < 2) return null
-          const irEdge = ir.edges[i]
+          const irEdge = ir.edges.find((e) => e.id === edge.id)
+          if (!irEdge) return null
           // «призрачная» связь: линия не рисуется, остаётся только знак («+» между чипами)
           if (isGhostEdge(irEdge, edge.label?.text)) return null
           const strokeWidth = irEdge.kind === 'thick' ? size.edgeWidthThick : size.edgeWidth
