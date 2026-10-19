@@ -204,6 +204,19 @@ export function normalize(db: any, source: string): FlowchartIR {
     }
   })
 
+  // Вложенные группы (subgraph внутри subgraph) mermaid отдаёт так, что во внешней
+  // группе лежит id внутренней, а не её узлы. Наша модель групп плоская, поэтому честно
+  // предупреждаем: нарисуется «рядом», а не «внутри».
+  const groupIds = new Set(rawGroups.map((g) => g.id as string))
+  const nested = rawGroups
+    .filter((g) => ((g.nodes as string[]) ?? []).some((id) => groupIds.has(id)))
+    .map((g) => (g.title as string) || (g.id as string))
+  if (nested.length) {
+    warnings.push(
+      `Вложенные группы пока рисуются плоско (без вложенности): ${nested.join(', ')}`,
+    )
+  }
+
   // вложенность: узел получает parentId первой группы, где он встретился
   const parentOf = new Map<string, string>()
   for (const g of groups) {

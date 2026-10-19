@@ -137,6 +137,23 @@ describe('бейджи: «1. текст» -> кружок с номером', ()
   })
 })
 
+describe('вложенные группы', () => {
+  it('дают предупреждение, а не тихо ломают раскладку', async () => {
+    const ir = await flowchart(`graph TD
+    subgraph Внешняя
+      A[Узел A]
+      subgraph Внутренняя
+        B[Узел B] --> C[Узел C]
+      end
+    end`)
+
+    expect(ir.groups).toHaveLength(2)
+    expect(ir.warnings.join(' ')).toContain('плоско')
+    // внешняя группа не «съедает» узлы внутренней
+    expect(ir.groups.find((g) => g.id === 'Внешняя')!.nodeIds).toEqual(['A'])
+  })
+})
+
 describe('роли из разметки', () => {
   it('A>текст] становится шевроном', async () => {
     const ir = await flowchart('graph TD\n A>Старт] --> B')
