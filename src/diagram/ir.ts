@@ -31,6 +31,7 @@ export type NodeRole =
   | 'decision' // A{текст} — ромб
   | 'accent' // A:::accent — брендовая заливка (градиент)
   | 'secondary' // A:::secondary — вторичный (синий) акцент
+  | 'outline' // A:::outline — белая карточка с акцентной обводкой
   | 'muted' // A:::muted — пунктирная рамка, «необязательный/будущий» шаг
 
 /** Фрагмент текста с начертанием: лейблы в mermaid умеют markdown. */
@@ -68,10 +69,14 @@ export interface IREdge {
   label?: TextBlock
 }
 
+/** Тон контейнера группы: в архиве рамки зелёные, синие и серые. */
+export type GroupTone = 'accent' | 'secondary' | 'neutral'
+
 export interface IRGroup {
   id: string
   label?: TextBlock
   nodeIds: string[]
+  tone: GroupTone
 }
 
 interface BaseIR {

@@ -29,6 +29,7 @@ const SHAPE_STYLE: Record<IRNode['role'], { fill: string; stroke: string; text: 
   hexagon: { fill: color.nodeFill, stroke: color.borderSubtle, text: color.textPrimary },
   chevron: { fill: color.nodeFill, stroke: color.borderSubtle, text: color.textPrimary },
   secondary: { fill: color.nodeSecondaryFill, stroke: color.borderSubtle, text: color.textPrimary },
+  outline: { fill: color.canvas, stroke: color.brandNeo, text: color.textPrimary },
   decision: { fill: color.nodeFill, stroke: 'none', text: color.textPrimary },
   circle: { fill: color.nodeFill, stroke: color.borderSubtle, text: color.textPrimary },
   accent: { fill: color.nodeAccentFill, stroke: 'none', text: color.textOnAccent },
@@ -78,6 +79,12 @@ export function DiagramSvg({ ir, boxes, layout, svgRef }: Props) {
           const bbox = layout.groups?.[group.id]
           if (!bbox) return null
           const label = group.label?.lines.map((l) => l.map((r) => r.text).join('')).join(' ') ?? ''
+          const stroke =
+            group.tone === 'accent'
+              ? color.groupStrokeAccent
+              : group.tone === 'secondary'
+                ? color.groupStrokeSecondary
+                : color.groupStrokeNeutral
           return (
             <g key={group.id}>
               <rect
@@ -87,12 +94,12 @@ export function DiagramSvg({ ir, boxes, layout, svgRef }: Props) {
                 height={bbox.height}
                 rx={size.radius + 4}
                 fill="none"
-                stroke={color.groupStroke}
+                stroke={stroke}
                 strokeWidth={1}
                 strokeDasharray="6 4"
               />
               {label && (
-                <text x={bbox.x + 12} y={bbox.y + 20} fontSize={14} fill={color.groupLabel}>
+                <text x={bbox.x + 12} y={bbox.y + 20} fontSize={14} fill={stroke}>
                   {label}
                 </text>
               )}
@@ -106,6 +113,8 @@ export function DiagramSvg({ ir, boxes, layout, svgRef }: Props) {
         {edgeGeometry.map((edge, i) => {
           if (edge.points.length < 2) return null
           const irEdge = ir.edges[i]
+          // «призрачная» связь: линия не рисуется, остаётся только знак («+» между чипами)
+          if (isGhostEdge(irEdge, edge.label?.text)) return null
           const strokeWidth = irEdge.kind === 'thick' ? size.edgeWidthThick : size.edgeWidth
           const dash = irEdge.kind === 'dashed' ? size.dash : undefined
 
@@ -176,6 +185,11 @@ export function DiagramSvg({ ir, boxes, layout, svgRef }: Props) {
       </g>
     </svg>
   )
+}
+
+/** Связь-разделитель: в архиве между чипами стоит «+» без линии. */
+function isGhostEdge(edge: { arrow: string } | undefined, labelText: string | undefined): boolean {
+  return edge?.arrow === 'none' && (labelText === '+' || labelText === '·' || labelText === '→')
 }
 
 function ArrowMarker({ id, fill }: { id: string; fill: string }) {

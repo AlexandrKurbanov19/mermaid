@@ -5,6 +5,7 @@ import {
   type EdgeArrow,
   type EdgeKind,
   type IRGroup,
+  type GroupTone,
   type IRNode,
   type IREdge,
   type NodeRole,
@@ -62,6 +63,7 @@ const DIRECTION: Record<string, Direction> = {
 /** Классы-маркеры: единственный разрешённый способ влиять на вид узла. */
 export const ACCENT_CLASS = 'accent'
 export const SECONDARY_CLASS = 'secondary'
+export const OUTLINE_CLASS = 'outline'
 export const MUTED_CLASS = 'muted'
 
 /**
@@ -163,6 +165,7 @@ export function normalize(db: any, source: string): FlowchartIR {
     const classes: string[] = Array.isArray(v.classes) ? v.classes : []
     if (classes.includes(ACCENT_CLASS)) role = 'accent'
     else if (classes.includes(SECONDARY_CLASS)) role = 'secondary'
+    else if (classes.includes(OUTLINE_CLASS)) role = 'outline'
     else if (classes.includes(MUTED_CLASS)) role = 'muted'
 
     const { badge, label } = extractBadge(parseLabel(v.text as string, v.labelType as string))
@@ -183,11 +186,23 @@ export function normalize(db: any, source: string): FlowchartIR {
 
   // --- группы (subgraph) --------------------------------------------------
   const nodeIds = new Set(nodes.map((n) => n.id))
-  const groups: IRGroup[] = rawGroups.map((g) => ({
-    id: g.id as string,
-    label: parseLabel(g.title as string, g.labelType as string),
-    nodeIds: ((g.nodes as string[]) ?? []).filter((id) => nodeIds.has(id)),
-  }))
+  // Тон контейнера: архив использует зелёные и синие рамки.
+  // Если пользователь явно пометил группу классом — уважаем, иначе чередуем accent/secondary.
+  const groups: IRGroup[] = rawGroups.map((g, index) => {
+    const classes: string[] = Array.isArray(g.classes) ? g.classes : []
+    const explicit: GroupTone | undefined = classes.includes(SECONDARY_CLASS)
+      ? 'secondary'
+      : classes.includes(ACCENT_CLASS)
+        ? 'accent'
+        : undefined
+
+    return {
+      id: g.id as string,
+      label: parseLabel(g.title as string, g.labelType as string),
+      nodeIds: ((g.nodes as string[]) ?? []).filter((id) => nodeIds.has(id)),
+      tone: explicit ?? (index % 2 === 0 ? 'accent' : 'secondary'),
+    }
+  })
 
   // вложенность: узел получает parentId первой группы, где он встретился
   const parentOf = new Map<string, string>()

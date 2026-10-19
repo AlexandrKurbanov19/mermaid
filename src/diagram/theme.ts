@@ -44,6 +44,9 @@ export const color = {
   edgeNeutral: '#9FA3A7', // оставлен для вторичных/приглушённых связей
   edgeLabelBg: '#FFFFFF',
   groupStroke: '#9FA3A7',
+  groupStrokeAccent: '#4BD0A0',
+  groupStrokeSecondary: '#0066FF',
+  groupStrokeNeutral: '#9FA3A7',
   groupLabel: '#808080',
   mutedFill: '#FFFFFF',
   mutedStroke: '#C4C5C4',
@@ -98,6 +101,7 @@ export const textArea = {
   circle: { width: 0.7, height: 0.7 },
   accent: { width: 1, height: 1 },
   secondary: { width: 1, height: 1 },
+  outline: { width: 1, height: 1 },
   muted: { width: 1, height: 1 },
 } as const
 
