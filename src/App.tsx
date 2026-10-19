@@ -169,6 +169,8 @@ export function App() {
               setSource(next.source)
             }}
             style={{
+              width: '100%',
+              maxWidth: '100%',
               height: 36,
               borderRadius: 12,
               border: '1px solid #D0D7DD',
