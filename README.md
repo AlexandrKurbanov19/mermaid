@@ -1,5 +1,7 @@
 # mermaid → схемы Нетологии
 
+[![Deploy to GitHub Pages](https://github.com/AlexandrKurbanov19/mermaid/actions/workflows/deploy.yml/badge.svg)](https://github.com/AlexandrKurbanov19/mermaid/actions/workflows/deploy.yml)
+
 Одностраничное React-приложение: вставляешь Mermaid-разметку слева — справа получаешь схему
 в фирменном стиле Нетологии и кнопки «Скачать PNG / SVG».
 
