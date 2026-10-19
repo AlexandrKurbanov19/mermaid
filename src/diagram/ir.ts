@@ -28,6 +28,9 @@ export type NodeRole =
   | 'circle' // A((текст))
   | 'hexagon' // A{{текст}}
   | 'chevron' // A>текст] — фигурный блок-стрелка
+  | 'cylinder' // A[(текст)] — база данных
+  | 'subroutine' // A[[текст]] — процедура/функция
+  | 'parallelogram' // A[/текст/] и A[\текст\] — ввод/вывод
   | 'decision' // A{текст} — ромб
   | 'accent' // A:::accent — брендовая заливка (градиент)
   | 'secondary' // A:::secondary — вторичный (синий) акцент

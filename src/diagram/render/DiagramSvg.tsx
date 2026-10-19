@@ -28,6 +28,9 @@ const SHAPE_STYLE: Record<IRNode['role'], { fill: string; stroke: string; text: 
   pill: { fill: color.nodeFill, stroke: color.borderSubtle, text: color.textPrimary },
   hexagon: { fill: color.nodeFill, stroke: color.borderSubtle, text: color.textPrimary },
   chevron: { fill: color.nodeFill, stroke: color.borderSubtle, text: color.textPrimary },
+  cylinder: { fill: color.nodeFill, stroke: color.borderSubtle, text: color.textPrimary },
+  subroutine: { fill: color.nodeFill, stroke: color.borderSubtle, text: color.textPrimary },
+  parallelogram: { fill: color.nodeFill, stroke: color.borderSubtle, text: color.textPrimary },
   secondary: { fill: color.nodeSecondaryFill, stroke: color.borderSubtle, text: color.textPrimary },
   outline: { fill: color.canvas, stroke: color.brandNeo, text: color.textPrimary },
   decision: { fill: color.nodeFill, stroke: 'none', text: color.textPrimary },
@@ -263,6 +266,44 @@ function shapeElement(
       const cx = x + w / 2
       const cy = y + h / 2
       return <polygon points={`${cx},${y} ${x + w},${cy} ${cx},${y + h} ${x},${cy}`} fill={fill} {...strokeProps} />
+    }
+    case 'cylinder': {
+      const ry = Math.min(h / 2, 10)
+      const cx = x + w / 2
+      return (
+        <g>
+          <path
+            d={`M ${x} ${y + ry} h ${w} v ${h - 2 * ry} h ${-w} z`}
+            fill={fill}
+            stroke="none"
+          />
+          <path
+            d={`M ${x} ${y + h - ry} a ${w / 2} ${ry} 0 0 0 ${w} 0 z`}
+            fill={fill}
+            stroke="none"
+          />
+          <ellipse cx={cx} cy={y + ry} rx={w / 2} ry={ry} fill={fill} stroke={stroke} strokeWidth={size.strokeWidth} />
+        </g>
+      )
+    }
+    case 'subroutine': {
+      return (
+        <g>
+          <rect x={x} y={y} width={w} height={h} rx={size.radius} fill={fill} stroke={stroke} strokeWidth={size.strokeWidth} />
+          <rect x={x + 4} y={y + 4} width={w - 8} height={h - 8} rx={size.radius - 4} fill="none" stroke={stroke} strokeWidth={size.strokeWidth} />
+        </g>
+      )
+    }
+    case 'parallelogram': {
+      const skew = Math.min(20, w / 4)
+      return (
+        <polygon
+          points={`${x + skew},${y} ${x + w},${y} ${x + w - skew},${y + h} ${x},${y + h}`}
+          fill={fill}
+          stroke={stroke}
+          strokeWidth={size.strokeWidth}
+        />
+      )
     }
     case 'chevron': {
       const notch = Math.min(24, w / 4)

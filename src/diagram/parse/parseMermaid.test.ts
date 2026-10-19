@@ -79,10 +79,21 @@ describe('формы', () => {
     expect(nodes[0].role).toBe(role)
   })
 
-  it('экзотическая форма сводится к box и попадает в warnings', async () => {
-    const result = await ir('graph TD\n A[[подпрограмма]] --> B')
+  it.each([
+    ['A[(текст)]', 'cylinder'],
+    ['A[[текст]]', 'subroutine'],
+    ['A[/текст/]', 'parallelogram'],
+    ['A[\\текст\\]', 'parallelogram'],
+    ['A>текст]', 'chevron'],
+  ])('%s -> %s (свой блок)', async (decl, role) => {
+    const { nodes } = await ir(`flowchart TD\n ${decl}`)
+    expect(nodes[0].role).toBe(role)
+  })
+
+  it('трапеция остаётся экзотикой и сводится к box с предупреждением', async () => {
+    const result = await ir('flowchart TD\n A[/трапеция\\] --> B')
     expect(result.nodes.find((n) => n.id === 'A')!.role).toBe('box')
-    expect(result.warnings.join(' ')).toContain('A (subroutine)')
+    expect(result.warnings.join(' ')).toContain('A (trapezoid)')
   })
 })
 

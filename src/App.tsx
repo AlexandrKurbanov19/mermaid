@@ -5,9 +5,7 @@ import type { DiagramIR } from './diagram/ir'
 import { measurer } from './diagram/measure/textMetrics'
 import { measureNodes, type NodeBox } from './diagram/measure/measureNode'
 import { layoutDiagram, type Layout } from './diagram/layout/layoutElk'
-import { layoutTimeline } from './diagram/layout/layoutTimeline'
 import { DiagramSvg } from './diagram/render/DiagramSvg'
-import { TimelineSvg } from './diagram/render/TimelineSvg'
 import { ZoomPane } from './diagram/render/ZoomPane'
 import { SyntaxHelp } from './components/SyntaxHelp'
 import { toSvgString, downloadSvg, downloadBlob } from './diagram/export/toSvgString'
@@ -71,7 +69,6 @@ export function App() {
   }, [debounced])
 
   const flowchartIr = parse.status === 'ok' && parse.ir.type === 'flowchart' ? parse.ir : null
-  const timelineIr = parse.status === 'ok' && parse.ir.type === 'timeline' ? parse.ir : null
 
   // [3] габариты узлов (fit-text) — синхронно из IR
   const boxes: Record<string, NodeBox> | null = useMemo(
@@ -94,12 +91,6 @@ export function App() {
     }
   }, [flowchartIr, boxes])
 
-  // таймлайн раскладывается синхронно (свой алгоритм, без ELK)
-  const timelineLayout = useMemo(
-    () => (timelineIr ? layoutTimeline(timelineIr, fontSpec, measurer) : null),
-    [timelineIr, fontSpec],
-  )
-
 
   const stats = useMemo(() => {
     if (flowchartIr && boxes) {
@@ -113,19 +104,8 @@ export function App() {
         )}${shrunk ? ` · ${shrunk} с уменьшенным шрифтом` : ''}`,
       }
     }
-    if (timelineIr) {
-      const events = timelineIr.points.reduce((sum, p) => sum + p.events.length, 0)
-      return {
-        text: `${plural(timelineIr.points.length, 'точка', 'точки', 'точек')} · ${plural(
-          events,
-          'событие',
-          'события',
-          'событий',
-        )}`,
-      }
-    }
     return null
-  }, [flowchartIr, timelineIr, boxes])
+  }, [flowchartIr, boxes])
 
   const handleSvg = async () => {
     if (!svgRef.current) return
@@ -155,18 +135,11 @@ export function App() {
     }
   }
 
-  const diagram =
-    flowchartIr && boxes && layout ? (
-      <DiagramSvg ir={flowchartIr} boxes={boxes} layout={layout} svgRef={svgRef} />
-    ) : timelineIr && timelineLayout ? (
-      <TimelineSvg ir={timelineIr} layout={timelineLayout} svgRef={svgRef} />
-    ) : null
+  const diagram = flowchartIr && boxes && layout ? (
+    <DiagramSvg ir={flowchartIr} boxes={boxes} layout={layout} svgRef={svgRef} />
+  ) : null
 
-  const zoomSize = layout
-    ? { width: layout.width, height: layout.height }
-    : timelineLayout
-      ? { width: timelineLayout.width, height: timelineLayout.height }
-      : null
+  const zoomSize = layout ? { width: layout.width, height: layout.height } : null
 
   // НЕ использовать svgRef в рендере: реф не триггерит перерисовку, и после первого
   // рендера кнопки оставались задизейбленными до следующего взаимодействия.
@@ -224,7 +197,7 @@ export function App() {
           spellCheck={false}
         />
         <span style={{ fontSize: 12, color: '#808080' }}>
-          Поддерживаются flowchart/graph и timeline. Не помнишь синтаксис — кнопка «Синтаксис ?».
+          Поддерживается только flowchart (блок-схемы): TD/TB, LR, BT, RL. graph — легаси-синоним. Не помнишь синтаксис — кнопка «Синтаксис ?».
         </span>
 
         {helpOpen && (

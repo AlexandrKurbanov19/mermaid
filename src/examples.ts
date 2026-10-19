@@ -15,7 +15,7 @@ export const EXAMPLES: Example[] = [
     id: 'basic',
     title: '1. Пример из задачи',
     checks: 'база: бокс, ромб, подписи рёбер, цикл D → B',
-    source: `graph TD
+    source: `flowchart TD
     A[Пользователь] --> B{Авторизован?}
     B -- да --> C[Открыть дашборд]
     B -- нет --> D[Показать логин]
@@ -25,14 +25,14 @@ export const EXAMPLES: Example[] = [
     id: 'linear',
     title: '2. Линейный процесс',
     checks: 'простая цепочка, вертикальная раскладка',
-    source: `graph TD
+    source: `flowchart TD
     A[Заявка] --> B[Проверка] --> C[Согласование] --> D[Запуск] --> E[Отчёт]`,
   },
   {
     id: 'shapes',
     title: '3. Все формы',
     checks: 'box, round, pill, circle, hexagon, decision',
-    source: `graph LR
+    source: `flowchart LR
     A[Прямоугольник] --> B(Скруглённый)
     B --> C([Капсула])
     C --> D((Круг))
@@ -43,7 +43,7 @@ export const EXAMPLES: Example[] = [
     id: 'exotic',
     title: '4. Экзотические формы',
     checks: 'все сводятся к обычному блоку + предупреждение',
-    source: `graph TD
+    source: `flowchart TD
     A[[Подпрограмма]] --> B[(Цилиндр)]
     B --> C[/Параллелограмм/]
     C --> D[\\Трапеция\\]
@@ -53,7 +53,7 @@ export const EXAMPLES: Example[] = [
     id: 'edges',
     title: '5. Все типы связей',
     checks: 'solid, dashed, thick, без стрелки, двусторонняя',
-    source: `graph TD
+    source: `flowchart TD
     A --> B
     B -.-> C
     C ==> D
@@ -64,7 +64,7 @@ export const EXAMPLES: Example[] = [
     id: 'edge-labels',
     title: '6. Подписи связей, два синтаксиса',
     checks: '|текст| и -- текст -->',
-    source: `graph TD
+    source: `flowchart TD
     A[Старт] -->|успех| B[Продолжить]
     A -- ошибка --> C[Повторить]
     B -->|готово| D[Конец]
@@ -74,63 +74,63 @@ export const EXAMPLES: Example[] = [
     id: 'direction-lr',
     title: '7. Горизонтальная схема (LR)',
     checks: 'направление слева направо',
-    source: `graph LR
+    source: `flowchart LR
     A[Идея] --> B[Исследование] --> C[Прототип] --> D[Запуск]`,
   },
   {
     id: 'direction-bt',
     title: '8. Снизу вверх (BT)',
     checks: 'обратное направление',
-    source: `graph BT
+    source: `flowchart BT
     A[Факт] --> B[Вывод] --> C[Решение]`,
   },
   {
     id: 'text-short',
     title: '9. Текст: короткий (шрифт 18)',
     checks: 'базовый размер, минимальный бокс',
-    source: `graph TD
+    source: `flowchart TD
     A[Ок] --> B[Да]`,
   },
   {
     id: 'text-medium',
     title: '10. Текст: средний (перенос строк)',
     checks: 'обёртка в 3 строки, шрифт ещё базовый',
-    source: `graph TD
+    source: `flowchart TD
     A[Пользователь авторизован и открывает дашборд] --> B[Готово]`,
   },
   {
     id: 'text-long',
     title: '11. Текст: длинный (шрифт уменьшается)',
     checks: 'fit-text: бокс НЕ растёт, шрифт падает до ~13px',
-    source: `graph TD
+    source: `flowchart TD
     A[Очень длинный текст в одном блоке, который описывает сразу несколько шагов сценария и никак не хочет помещаться в стандартный прямоугольник схемы] --> B[Короткий]`,
   },
   {
     id: 'text-huge',
     title: '12. Текст: огромный (обрезка «…»)',
     checks: 'предел: шрифт 11px, многоточие, бокс не выходит за 260×132',
-    source: `graph TD
+    source: `flowchart TD
     A[Очень длинный текст в одном блоке. Очень длинный текст в одном блоке. Очень длинный текст в одном блоке. Очень длинный текст в одном блоке. Очень длинный текст в одном блоке. Очень длинный текст в одном блоке. Очень длинный текст в одном блоке. Очень длинный текст в одном блоке.] --> B[Короткий]`,
   },
   {
     id: 'text-word',
     title: '13. Текст: одно слово без пробелов',
     checks: 'жёсткий перенос по символам',
-    source: `graph TD
+    source: `flowchart TD
     A[суперкалифраджилистикэкспиалидоция] --> B[Ок]`,
   },
   {
     id: 'markdown',
     title: '14. Markdown в подписях',
     checks: '**жирный**, `код`, <br/> перенос',
-    source: `graph TD
+    source: `flowchart TD
     A["**Шаг 1**<br/>модель извлекает \`json\`"] --> B["Шаг 2<br/>сервис находит **заказ**"]`,
   },
   {
     id: 'accent',
     title: '15. Акцентный и приглушённый узлы',
     checks: ':::accent — брендовый градиент; :::muted — пунктирная рамка',
-    source: `graph TD
+    source: `flowchart TD
     A[Обычный шаг] --> B[Важный шаг]:::accent
     B --> C[Необязательный шаг]:::muted
     C --> D[Финал]`,
@@ -139,7 +139,7 @@ export const EXAMPLES: Example[] = [
     id: 'styles-ignored',
     title: '16. Пользовательские стили (игнорируются)',
     checks: 'classDef/style не применяются, показывается предупреждение',
-    source: `graph TD
+    source: `flowchart TD
     A[Первый] --> B[Второй]
     classDef red fill:#ff0000,stroke:#000
     class A red
@@ -149,7 +149,7 @@ export const EXAMPLES: Example[] = [
     id: 'subgraph',
     title: '17. Группа (subgraph)',
     checks: 'группы рисуются пунктирными контейнерами (ELK-кластеры)',
-    source: `graph TD
+    source: `flowchart TD
     subgraph Стадион
       A[Бригады] --> B[Клубы]
     end
@@ -162,7 +162,7 @@ export const EXAMPLES: Example[] = [
     id: 'many',
     title: '18. Много узлов (20)',
     checks: 'производительность и читаемость большой схемы',
-    source: `graph TD
+    source: `flowchart TD
     N1 --> N2 --> N3 --> N4 --> N5
     N1 --> N6 --> N7 --> N8
     N3 --> N9 --> N10
@@ -176,7 +176,7 @@ export const EXAMPLES: Example[] = [
     id: 'fan',
     title: '19. Веер: 1 → 6 и 6 → 1',
     checks: 'широкая раскладка, много параллельных линий',
-    source: `graph TD
+    source: `flowchart TD
     A[Центр] --> B1[Раз]
     A --> B2[Два]
     A --> B3[Три]
@@ -194,7 +194,7 @@ export const EXAMPLES: Example[] = [
     id: 'disconnected',
     title: '20. Несвязные компоненты',
     checks: 'два независимых графа на одном холсте',
-    source: `graph TD
+    source: `flowchart TD
     A[Один] --> B[Два]
     C[Три] --> D[Четыре]`,
   },
@@ -202,7 +202,7 @@ export const EXAMPLES: Example[] = [
     id: 'self-loop',
     title: '21. Петля на себя',
     checks: 'ребро A → A не должно ломать раскладку',
-    source: `graph TD
+    source: `flowchart TD
     A[Старт] --> A
     A --> B[Финал]`,
   },
@@ -210,62 +210,40 @@ export const EXAMPLES: Example[] = [
     id: 'decision-long',
     title: '22. Ромб с длинным текстом',
     checks: 'текст вписан в 0.60×0.50 ромба, не вылезает за скосы',
-    source: `graph TD
+    source: `flowchart TD
     A{Пользователь авторизован и имеет активную подписку?} --> B[Да]
     A --> C[Нет]`,
   },
-  {
-    id: 'timeline',
-    title: '25. Таймлайн: годы + события',
-    checks: 'тип timeline: ось, кружки, подписи сверху/снизу с выносками',
-    source: `timeline
-    title История продукта
-    2022 : Запуск первой версии
-    2023 : Две новые программы : Рост аудитории
-    2024 : Масштабирование`,
-  },
-  {
-    id: 'timeline-sections',
-    title: '26. Таймлайн с секциями',
-    checks: 'section даёт дорожки: заголовок в кружке, task — подпись',
-    source: `timeline
-    section 2022
-        Запуск : Первый продукт
-    section 2023
-        Рост : Две новые программы
-    section 2024
-        Масштаб : Выход на регионы`,
-  },
-  {
+      {
     id: 'badges',
-    title: '27. Бейджи-номера',
+    title: '23. Бейджи-номера',
     checks: '«1. текст» -> номер в кружке слева, без нового синтаксиса',
-    source: `graph LR
+    source: `flowchart LR
     A[1. Понять проблему] --> B[2. Сформулировать задачу]
     B --> C[3. Задать критерии]
     C --> D[4. Принять решение]`,
   },
   {
     id: 'chevron-secondary',
-    title: '28. Шеврон и вторичный акцент',
+    title: '24. Шеврон и вторичный акцент',
     checks: 'A>текст] -> шеврон; :::secondary -> синяя карточка',
-    source: `graph TD
+    source: `flowchart TD
     A>Старт процесса] --> B[Обычный шаг]
     B --> C[Второй поток]:::secondary
     C --> D>Финиш]`,
   },
   {
     id: 'chips-plus',
-    title: '29. Чипы через «+»',
+    title: '25. Чипы через «+»',
     checks: 'связь без линии и без стрелки: рисуется только разделитель «+»',
-    source: `graph LR
+    source: `flowchart LR
     A[Входные данные] ---|+| B[Ответ модели] ---|+| C[Время ответа] ---|+| D[Результат проверки]`,
   },
   {
     id: 'outline-accent',
-    title: '30. Акцент обводкой + цветные контейнеры',
+    title: '26. Акцент обводкой + цветные контейнеры',
     checks: ':::outline — белая карточка с зелёной рамкой; контейнеры чередуют зелёный и синий',
-    source: `graph TD
+    source: `flowchart TD
     subgraph Стадион
       A[Бригады] --> B[Клубы]
     end
@@ -276,16 +254,23 @@ export const EXAMPLES: Example[] = [
     C --> E[Директор по коммуникациям]:::outline`,
   },
   {
+    id: 'database',
+    title: '27. База данных (цилиндр)',
+    checks: '[(...)] — цилиндр; LR-цепочка UI → API → DB',
+    source: `flowchart LR
+  UI --> API --> DB[(Database)]`,
+  },
+  {
     id: 'error-syntax',
-    title: '23. ОШИБКА: битый синтаксис',
+    title: '28. ОШИБКА: битый синтаксис',
     checks: 'плашка ошибки, превью не падает',
-    source: `graph TD
+    source: `flowchart TD
     A[Старт] -->
     B -->--> C`,
   },
   {
     id: 'error-type',
-    title: '24. ОШИБКА: другой тип диаграммы',
+    title: '29. ОШИБКА: другой тип диаграммы',
     checks: 'sequenceDiagram в v1 не поддерживается',
     source: `sequenceDiagram
     A->>B: привет`,

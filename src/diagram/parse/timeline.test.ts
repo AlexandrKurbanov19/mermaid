@@ -1,18 +1,25 @@
 import { describe, expect, it } from 'vitest'
+import mermaid from 'mermaid'
 import { parseMermaid } from './parseMermaid'
 import { extractBadge } from './normalize'
+import { normalizeTimeline } from './normalizeTimeline'
 import type { TimelineIR, FlowchartIR } from '../ir'
 
 /**
  * Тесты таймлайна и бейджей.
- * DOM для mermaid предоставляет environment `jsdom` (см. vitest.config.ts).
+ *
+ * Таймлайн НЕ входит в v1 (parser его отклоняет), но код нормализации сохранён.
+ * Поэтому нормализацию тестируем напрямую, минуя parseMermaid.
  */
 
+async function timelineDb(source: string): Promise<any> {
+  mermaid.initialize({ startOnLoad: false })
+  const result = await mermaid.mermaidAPI.getDiagramFromText(source)
+  return result.db
+}
+
 async function timeline(source: string): Promise<TimelineIR> {
-  const res = await parseMermaid(source)
-  if (!res.ok) throw new Error(`ожидали успешный парсинг: ${res.error.message}`)
-  if (res.ir.type !== 'timeline') throw new Error(`ожидали timeline, получили ${res.ir.type}`)
-  return res.ir
+  return normalizeTimeline(await timelineDb(source), source)
 }
 
 async function flowchart(source: string): Promise<FlowchartIR> {
@@ -24,6 +31,16 @@ async function flowchart(source: string): Promise<FlowchartIR> {
 
 const text = (ir: TimelineIR, i: number) =>
   ir.points[i].label.lines.map((line) => line.map((r) => r.text).join('')).join(' ')
+
+describe('timeline: в v1 отключён', () => {
+  it('parseMermaid отклоняет timeline', async () => {
+    const res = await parseMermaid('timeline\n 2022 : Запуск')
+    expect(res.ok).toBe(false)
+    if (res.ok) return
+    expect(res.error.kind).toBe('unsupported-type')
+    expect(res.error.message).toContain('flowchart')
+  })
+})
 
 describe('timeline: парсинг', () => {
   it('без section: время лежит в task', async () => {

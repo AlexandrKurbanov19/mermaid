@@ -31,26 +31,19 @@ const SHAPE_TO_ROLE: Record<string, NodeRole> = {
   diamond: 'decision',
   question: 'decision',
   hexagon: 'hexagon',
-  // ниже — экзотика: сводим к обычному блоку (стандартизация, см. docs/THEME.md §4)
-  subroutine: 'box',
-  cylinder: 'box',
+  // стандартные «непрямоугольные» блоки — сохраняем форму
+  cylinder: 'cylinder',
+  subroutine: 'subroutine',
+  lean_right: 'parallelogram',
+  lean_left: 'parallelogram',
   odd: 'chevron',
-  lean_right: 'box',
-  lean_left: 'box',
+  // экзотика — сводим к обычному блоку
   trapezoid: 'box',
   inv_trapezoid: 'box',
   default: 'box',
 }
 
-const EXOTIC = new Set([
-  'subroutine',
-  'cylinder',
-  'odd',
-  'lean_right',
-  'lean_left',
-  'trapezoid',
-  'inv_trapezoid',
-])
+const EXOTIC = new Set(['trapezoid', 'inv_trapezoid'])
 
 const DIRECTION: Record<string, Direction> = {
   TB: 'TB',

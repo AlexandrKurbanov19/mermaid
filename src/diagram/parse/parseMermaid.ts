@@ -1,7 +1,6 @@
 import mermaid from 'mermaid'
 import type { DiagramIR } from '../ir'
 import { normalize } from './normalize'
-import { normalizeTimeline } from './normalizeTimeline'
 
 /**
  * Шаг [1] пайплайна: Mermaid-разметка -> IR.
@@ -36,9 +35,8 @@ function ensureInit() {
   initialized = true
 }
 
-/** Типы диаграмм, которые мы реально умеем рисовать. */
+/** В v1 поддерживается только flowchart (блок-схемы) с любым направлением. */
 const FLOWCHART_TYPES = new Set(['flowchart', 'flowchart-v2', 'graph', 'flow'])
-const TIMELINE_TYPES = new Set(['timeline'])
 
 function extractLine(err: unknown): number | undefined {
   if (typeof err !== 'object' || err === null) return undefined
@@ -84,22 +82,12 @@ export async function parseMermaid(text: string): Promise<ParseResult> {
     const type: string = diagram?.type ?? ''
     const db = diagram?.db
 
-    if (TIMELINE_TYPES.has(type)) {
-      if (!db || typeof db.getTasks !== 'function') {
-        return {
-          ok: false,
-          error: { kind: 'unsupported-type', message: 'Не удалось разобрать таймлайн.' },
-        }
-      }
-      return { ok: true, ir: normalizeTimeline(db, source) }
-    }
-
     if (type && !FLOWCHART_TYPES.has(type)) {
       return {
         ok: false,
         error: {
           kind: 'unsupported-type',
-          message: `Тип диаграммы «${type}» пока не поддерживается. Поддерживаются flowchart/graph и timeline.`,
+          message: `Тип диаграммы «${type}» не поддерживается в первой версии: только flowchart (блок-схемы). sequence, class, state, ER, gantt, timeline, mindmap и др. — вне v1.`,
         },
       }
     }

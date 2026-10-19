@@ -74,7 +74,7 @@ export const size = {
   arrow: 8,
 
   paddingX: 16,
-  paddingY: 12,
+  paddingY: 14,
 
   nodeMinWidth: 120,
   nodeMaxWidth: 260,
@@ -97,6 +97,9 @@ export const textArea = {
   pill: { width: 1, height: 1 },
   hexagon: { width: 0.75, height: 1 },
   chevron: { width: 0.75, height: 1 },
+  cylinder: { width: 1, height: 0.78 },
+  subroutine: { width: 0.88, height: 0.82 },
+  parallelogram: { width: 0.8, height: 1 },
   decision: { width: 0.6, height: 0.5 },
   circle: { width: 0.7, height: 0.7 },
   accent: { width: 1, height: 1 },
