@@ -51,12 +51,13 @@ export function DiagramSvg({ ir, boxes, layout, svgRef }: Props) {
         <ArrowMarker id={markerAccentId} fill={color.edgeAccent} />
       </defs>
 
-      <rect x={0} y={0} width={layout.width} height={layout.height} fill={color.canvas} />
+      <rect id="canvas-bg" x={0} y={0} width={layout.width} height={layout.height} fill={color.canvas} />
 
       {/* группы (subgraph): пунктирный контейнер вокруг своих узлов */}
       <g>
         {ir.groups.map((group) => {
-          const bbox = groupBBox(group.nodeIds, layout)
+          // габарит даёт ELK (кластер); фолбэк на bbox нужен для старых вызовов
+          const bbox = layout.groups?.[group.id] ?? groupBBox(group.nodeIds, layout)
           if (!bbox) return null
           const label = group.label?.lines.map((l) => l.map((r) => r.text).join('')).join(' ') ?? ''
           return (
@@ -73,12 +74,7 @@ export function DiagramSvg({ ir, boxes, layout, svgRef }: Props) {
                 strokeDasharray="6 4"
               />
               {label && (
-                <text
-                  x={bbox.x + 12}
-                  y={bbox.y + 16}
-                  fontSize={14}
-                  fill={color.groupLabel}
-                >
+                <text x={bbox.x + 12} y={bbox.y + 20} fontSize={14} fill={color.groupLabel}>
                   {label}
                 </text>
               )}

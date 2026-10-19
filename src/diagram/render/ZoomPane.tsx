@@ -4,8 +4,11 @@ import { color } from '../theme'
 /**
  * Превью схемы с зумом (колесо, кнопки) и панорамированием (перетаскивание мышью).
  *
- * Важно: трансформация применяется к обёртке, а НЕ к самому <svg>.
- * Поэтому экспорт не зависит от текущего зума и панорамы.
+ * Два важных решения:
+ *  1. Трансформация применяется к обёртке, а НЕ к самому <svg> — поэтому экспорт
+ *     не зависит от текущего зума.
+ *  2. Панорама ограничивается с учётом зума: схему нельзя утащить за пределы окна
+ *     (при увеличении — не даём открыть «пустоту», при уменьшении — держим в кадре).
  */
 
 interface Props {
@@ -22,38 +25,78 @@ interface View {
 
 const MIN_SCALE = 0.2
 const MAX_SCALE = 4
+/** сколько «пустоты» разрешаем по краям, px */
+const SLACK = 80
+
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v))
+
+/** Держит содержимое в кадре с учётом масштаба. */
+function clampAxis(pos: number, viewport: number, content: number): number {
+  if (content <= viewport) {
+    // содержимое меньше окна: не даём уехать дальше, чем на SLACK
+    return clamp(pos, -SLACK, Math.max(viewport - content, 0) + SLACK)
+  }
+  // содержимое больше окна: не даём открыть пустоту по краям
+  return clamp(pos, viewport - content - SLACK, SLACK)
+}
 
 export function ZoomPane({ width, height, children }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // держим актуальные значения в ref, чтобы обработчики не зависели от замыканий
   const viewRef = useRef<View>({ scale: 1, x: 0, y: 0 })
   const [view, setView] = useState<View>(viewRef.current)
   const [dragging, setDragging] = useState(false)
   const dragRef = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null)
+  /** пока пользователь не двигал вьюпорт сам — держим «вписать в окно» при ресайзе */
+  const autoFitRef = useRef(true)
 
-  const update = useCallback((next: View) => {
-    viewRef.current = next
-    setView(next)
-  }, [])
+  const apply = useCallback((next: View, clampIt = true) => {
+    const el = containerRef.current
+    let v = next
+    if (clampIt && el) {
+      v = {
+        scale: next.scale,
+        x: clampAxis(next.x, el.clientWidth, width * next.scale),
+        y: clampAxis(next.y, el.clientHeight, height * next.scale),
+      }
+    }
+    viewRef.current = v
+    setView(v)
+  }, [width, height])
 
-  /** Вписать схему в контейнер (не увеличивая больше 100 %). */
   const fit = useCallback(() => {
     const el = containerRef.current
     if (!el || !width || !height) return
     const scale = clamp(Math.min(el.clientWidth / width, el.clientHeight / height), MIN_SCALE, 1)
-    update({
-      scale,
-      x: (el.clientWidth - width * scale) / 2,
-      y: (el.clientHeight - height * scale) / 2,
-    })
-  }, [width, height, update])
+    autoFitRef.current = true
+    apply(
+      {
+        scale,
+        x: (el.clientWidth - width * scale) / 2,
+        y: (el.clientHeight - height * scale) / 2,
+      },
+      false,
+    )
+  }, [width, height, apply])
 
   // новая схема (другие габариты) — вписываем заново
   useEffect(() => {
     fit()
   }, [fit])
+
+  // ресайз контейнера: если пользователь не масштабировал сам — переподгоняем,
+  // иначе только пересчитываем допустимые границы панорамы
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+
+    const ro = new ResizeObserver(() => {
+      if (autoFitRef.current) fit()
+      else apply(viewRef.current)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [fit, apply])
 
   const zoomAt = useCallback(
     (factor: number, cx: number, cy: number) => {
@@ -61,9 +104,10 @@ export function ZoomPane({ width, height, children }: Props) {
       const scale = clamp(v.scale * factor, MIN_SCALE, MAX_SCALE)
       if (scale === v.scale) return
       const ratio = scale / v.scale
-      update({ scale, x: cx - (cx - v.x) * ratio, y: cy - (cy - v.y) * ratio })
+      autoFitRef.current = false
+      apply({ scale, x: cx - (cx - v.x) * ratio, y: cy - (cy - v.y) * ratio })
     },
-    [update],
+    [apply],
   )
 
   // колесо = зум к курсору (нативный слушатель, чтобы можно было preventDefault)
@@ -82,18 +126,18 @@ export function ZoomPane({ width, height, children }: Props) {
   }, [zoomAt])
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    // тащим только левой кнопкой/пальцем; на кнопках управления — не тащим
     if (e.button !== 0) return
     if ((e.target as HTMLElement).closest('[data-zoom-control]')) return
     e.currentTarget.setPointerCapture(e.pointerId)
     dragRef.current = { startX: e.clientX, startY: e.clientY, originX: viewRef.current.x, originY: viewRef.current.y }
+    autoFitRef.current = false
     setDragging(true)
   }
 
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current
     if (!drag) return
-    update({
+    apply({
       scale: viewRef.current.scale,
       x: drag.originX + (e.clientX - drag.startX),
       y: drag.originY + (e.clientY - drag.startY),

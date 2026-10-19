@@ -10,11 +10,20 @@ import { getEmbeddedFontCss } from './embedFonts'
  *  - встроен шрифт (см. embedFonts);
  *  - убран React-мусор вроде aria-* и data-*.
  */
-export async function toSvgString(svg: SVGSVGElement): Promise<string> {
+export interface SvgExportOptions {
+  /** убрать белую подложку (для PNG с прозрачностью) */
+  transparent?: boolean
+}
+
+export async function toSvgString(svg: SVGSVGElement, opts: SvgExportOptions = {}): Promise<string> {
   const clone = svg.cloneNode(true) as SVGSVGElement
 
   clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
   clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
+
+  if (opts.transparent) {
+    clone.querySelector('#canvas-bg')?.remove()
+  }
 
   const viewBox = clone.getAttribute('viewBox') ?? '0 0 100 100'
   const [, , vbWidth, vbHeight] = viewBox.split(/\s+/).map(Number)

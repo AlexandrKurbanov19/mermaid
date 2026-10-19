@@ -44,6 +44,8 @@ export function App() {
   const [parse, setParse] = useState<ParseState>({ status: 'idle' })
   const [layout, setLayout] = useState<Layout | null>(null)
   const [busy, setBusy] = useState<null | 'png' | 'svg'>(null)
+  const [scale, setScale] = useState(2)
+  const [transparent, setTransparent] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
 
@@ -93,7 +95,7 @@ export function App() {
     setBusy('svg')
     setExportError(null)
     try {
-      downloadSvg(await toSvgString(svgRef.current), 'schema.svg')
+      downloadSvg(await toSvgString(svgRef.current, { transparent }), 'schema.svg')
     } catch (e) {
       setExportError(e instanceof Error ? e.message : String(e))
     } finally {
@@ -106,8 +108,8 @@ export function App() {
     setBusy('png')
     setExportError(null)
     try {
-      const svgString = await toSvgString(svgRef.current)
-      const blob = await svgToPngBlob(svgString, { scale: 2 })
+      const svgString = await toSvgString(svgRef.current, { transparent })
+      const blob = await svgToPngBlob(svgString, { scale, transparent })
       downloadBlob(blob, 'schema.png')
     } catch (e) {
       setExportError(e instanceof Error ? e.message : String(e))
@@ -225,14 +227,30 @@ export function App() {
         </div>
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <button type="button" style={btnStyle} disabled={!ready || busy !== null} onClick={handlePng}>
+          <button type="button" style={btnStyle(!ready || busy !== null)} disabled={!ready || busy !== null} onClick={handlePng}>
             {busy === 'png' ? 'Готовлю PNG…' : 'Скачать PNG'}
           </button>
-          <button type="button" style={btnStyle} disabled={!ready || busy !== null} onClick={handleSvg}>
+          <button type="button" style={btnStyle(!ready || busy !== null)} disabled={!ready || busy !== null} onClick={handleSvg}>
             {busy === 'svg' ? 'Готовлю SVG…' : 'Скачать SVG'}
           </button>
-          <span style={{ color: '#808080', fontSize: 12 }}>
-            PNG 2×, белый фон · колесо — зум, перетаскивание — панорама, двойной клик — вписать
+          <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 13, color: '#808080' }}>
+            масштаб
+            <select
+              value={scale}
+              onChange={(e) => setScale(Number(e.target.value))}
+              style={{ height: 32, borderRadius: 10, border: '1px solid #D0D7DD', fontFamily: 'inherit', fontSize: 13 }}
+            >
+              <option value={1}>1×</option>
+              <option value={2}>2×</option>
+              <option value={3}>3×</option>
+            </select>
+          </label>
+          <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 13, color: '#808080' }}>
+            <input type="checkbox" checked={transparent} onChange={(e) => setTransparent(e.target.checked)} />
+            прозрачный фон
+          </label>
+          <span style={{ color: '#808080', fontSize: 12, flexBasis: '100%' }}>
+            колесо — зум, перетаскивание — панорама, двойной клик — вписать
           </span>
           {exportError && <span style={{ color: '#B93A33', fontSize: 12 }}>{exportError}</span>}
         </div>
@@ -241,15 +259,19 @@ export function App() {
   )
 }
 
-const btnStyle: React.CSSProperties = {
-  height: 40,
-  padding: '0 16px',
-  borderRadius: 12,
-  border: 'none',
-  background: '#4BD0A0',
-  color: '#27292D',
-  fontFamily: 'inherit',
-  fontSize: 14,
-  cursor: 'pointer',
-  opacity: 0.5,
+function btnStyle(disabled: boolean): React.CSSProperties {
+  return {
+    height: 40,
+    padding: '0 16px',
+    borderRadius: 12,
+    border: 'none',
+    background: '#4BD0A0',
+    color: '#27292D',
+    fontFamily: 'inherit',
+    fontSize: 14,
+    fontWeight: 500,
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    opacity: disabled ? 0.4 : 1,
+    transition: 'opacity 120ms',
+  }
 }

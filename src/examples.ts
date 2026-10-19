@@ -147,7 +147,7 @@ export const EXAMPLES: Example[] = [
   {
     id: 'subgraph',
     title: '17. Группа (subgraph)',
-    checks: 'в модели появляется группа; в SVG пока НЕ рисуется',
+    checks: 'группы рисуются пунктирными контейнерами (ELK-кластеры)',
     source: `graph TD
     subgraph Стадион
       A[Бригады] --> B[Клубы]
