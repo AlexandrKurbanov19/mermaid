@@ -119,9 +119,9 @@ export function App() {
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) 1.2fr', gap: 24, padding: 24, height: '100vh' }}>
-      <section style={{ display: 'grid', gridTemplateRows: 'auto auto 1fr', gap: 8, minHeight: 0 }}>
-        <h1 style={{ margin: 0, fontSize: 20 }}>Mermaid</h1>
+    <div className="app">
+      <section className="pane pane--editor">
+        <h1 className="pane__title">Mermaid</h1>
         <div style={{ display: 'grid', gap: 4 }}>
           <select
             value={exampleId}
@@ -152,27 +152,16 @@ export function App() {
           </span>
         </div>
         <textarea
+          className="editor"
           value={source}
           onChange={(e) => setSource(e.target.value)}
           spellCheck={false}
-          style={{
-            width: '100%',
-            height: '100%',
-            resize: 'none',
-            padding: 12,
-            border: '1px solid #D0D7DD',
-            borderRadius: 12,
-            fontFamily: "'Roboto Mono', ui-monospace, monospace",
-            fontSize: 13,
-            lineHeight: 1.6,
-            outline: 'none',
-          }}
         />
       </section>
 
-      <section style={{ display: 'grid', gridTemplateRows: 'auto 1fr auto', gap: 12, minHeight: 0 }}>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
-          <h1 style={{ margin: 0, fontSize: 20 }}>Предпросмотр</h1>
+      <section className="pane pane--preview">
+        <div className="pane__head">
+          <h1 className="pane__title">Предпросмотр</h1>
           {stats && (
             <span style={{ color: '#808080', fontSize: 13 }}>
               {plural(stats.nodes, 'узел', 'узла', 'узлов')} · {plural(stats.edges, 'связь', 'связи', 'связей')}
@@ -181,18 +170,7 @@ export function App() {
           )}
         </div>
 
-        <div
-          style={{
-            border: '1px solid #E3E5E9',
-            borderRadius: 12,
-            padding: 16,
-            overflow: 'hidden',
-            minHeight: 0,
-            background: '#fff',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
+        <div className="preview-box">
           {parse.status === 'error' && (
             <div style={{ color: '#B93A33', fontSize: 14 }}>
               <strong>Не удалось разобрать разметку</strong>
@@ -226,7 +204,7 @@ export function App() {
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="toolbar">
           <button type="button" style={btnStyle(!ready || busy !== null)} disabled={!ready || busy !== null} onClick={handlePng}>
             {busy === 'png' ? 'Готовлю PNG…' : 'Скачать PNG'}
           </button>

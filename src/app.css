@@ -1,0 +1,106 @@
+/*
+  Раскладка страницы.
+
+  Десктоп: две колонки (ввод слева, вывод справа).
+  Узкий экран: «башенка» — ввод сверху, вывод снизу, каждый своей высоты,
+  страница скроллится целиком.
+*/
+
+.app {
+  display: flex;
+  gap: 24px;
+  padding: 24px;
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.pane--editor {
+  flex: 0 0 42%;
+  min-width: 320px;
+}
+
+.pane--preview {
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 12px;
+}
+
+.pane__head {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.pane__title {
+  margin: 0;
+  font-size: 20px;
+}
+
+.editor {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  resize: none;
+  padding: 12px;
+  border: 1px solid #d0d7dd;
+  border-radius: 12px;
+  font-family: 'Roboto Mono', ui-monospace, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.preview-box {
+  flex: 1 1 auto;
+  min-height: 0;
+  border: 1px solid #e3e5e9;
+  border-radius: 12px;
+  padding: 16px;
+  overflow: hidden;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .app {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .pane--editor {
+    flex: 0 0 auto;
+    min-width: 0;
+    height: 40vh;
+    min-height: 220px;
+  }
+
+  .pane--preview {
+    flex: 0 0 auto;
+    height: 58vh;
+    min-height: 320px;
+  }
+
+  .preview-box {
+    padding: 8px;
+  }
+}
