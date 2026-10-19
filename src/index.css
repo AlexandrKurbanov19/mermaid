@@ -1,0 +1,7 @@
+:root {
+  font-family: 'Sans Display', Arial, sans-serif;
+  color: #27292d;
+  background: #fff;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }

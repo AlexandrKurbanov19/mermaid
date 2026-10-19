@@ -2,7 +2,53 @@
 
 Единственный файл, где живут цвета, шрифты, радиусы и отступы. Рендерер берёт значения **только** отсюда.
 
-Колонка «источник»: `архив` — снято пиксельно с референсов; `DS` — конвенция именования из `@salutejs/sdds-netology`; `придумано` — моё правило для консистентности (можно менять числом в одном файле).
+**Источники (по приоритету):**
+
+1. **`apps/landings/src/stylesheets/vars.sass`** и `libs/shared/src/stylesheets/vars.sass` — брендовые токены Нетологии, живые значения из прод-кода. Главный источник для цвета.
+2. **Архив референсов** (`~/Desktop/схемы/`, 25 слайдов) — формы, геометрия, стиль стрелок. Пиксельные замеры.
+3. **DS `@salutejs/sdds-netology`** — семантические имена + поведение компонентов. Тема под ним — `plasma_b2c__light` (акцент **синий**, поэтому переопределяем).
+
+---
+
+## 0. Что проверено в рантайме (а не выведено из общих соображений)
+
+Поднял минимальный проект (`src/`, Vite, порт 5199), поставил `@salutejs/sdds-netology@0.343.0` + `@salutejs/plasma-themes@0.45.0`, прочитал вычисленные CSS-переменные в браузере:
+
+| Переменная | Значение в `plasma_b2c__light` |
+|---|---|
+| `--on-light-surface-accent` | `#2A72F8` (синий — **не бренд Нетологии**) |
+| `--on-light-surface-accent-minor` | `#DEE9FF` |
+| `--on-light-text-primary` | `#080808F5` |
+| `--on-light-text-secondary` | `#0808088F` |
+| `--on-light-surface-solid-primary` | `#F5F5F5` |
+| `--on-light-surface-solid-secondary` | `#ECECEC` |
+| `--on-light-surface-solid-tertiary` | `#DDDDDD` |
+| `--on-light-surface-solid-card` | `#FFFFFFFF` |
+| `--on-light-outline-accent` | `#2A72F8` |
+
+Кнопка DS по умолчанию: фон `rgb(42,114,248)`, высота **48 px**, радиус **12 px**, шрифт **`SB Sans Text`**.
+
+**Вывод:** DS — это инструмент, но не источник бренд-цвета. Зелёный берём из `vars.sass`.
+
+### Как переопределить акцент на бренд-зелёный (проверено, работает)
+
+DS подставляет алиасы (`--surface-accent` и т.п.) уже **резолвнутыми литералами** через runtime-стили, поэтому обычного `:root` **недостаточно** — нужен `!important`:
+
+```css
+/* src/theme/netology.css, импортируется после темы DS */
+:root {
+  --on-light-surface-accent: #4bd0a0;
+  --on-light-surface-accent-hover: #65ebc3;
+  --on-light-surface-accent-active: #37bc8b;
+  --on-light-surface-accent-minor: #e8fbf3;
+
+  --surface-accent: #4bd0a0 !important;
+  --surface-accent-hover: #65ebc3 !important;
+  --surface-accent-active: #37bc8b !important;
+}
+```
+
+Результат в рантайме: `--surface-accent: #4bd0a0`, фон кнопки `rgb(75,208,160)`. Файл уже лежит в репозитории.
 
 ---
 
@@ -11,49 +57,50 @@
 ```ts
 export const color = {
   // Холст
-  canvas:            '#FFFFFF',   // архив, 78–94 % площади слайда
+  canvas:            '#FFFFFF',
 
-  // Текст
-  textPrimary:       '#1F2226',   // архив (#27292D / #1F2226 / #000000 → стандартизовано)
-  textSecondary:     '#898989',   // архив
-  textOnAccent:      '#1F2226',   // СМ. ПРЕДУПРЕЖДЕНИЕ НИЖЕ
+  // Текст: $c-darkblack #2B2B2B / архив #27292D → стандартизовано
+  textPrimary:       '#27292D',
+  textSecondary:     '#808080',   // $c-grey / архив #898989
+  textOnAccent:      '#27292D',   // см. предупреждение по контрасту
 
-  // Узлы (семейство A)
-  nodeFill:          '#F2F4F6',   // архив (#F2F4F6 / #F2F3F6 / #F3F3F6 → стандартизовано)
-  nodeStroke:        '#D0D7DD',   // архив
-  nodeAccentFill:    '#3DD8B0',   // архив (#39D3AD / #35CBAA / #3DD8B0 / #47C397 → стандартизовано)
-  nodeMutedFill:     '#FAFBFC',   // придумано: «неактивный» узел (dashed)
+  // Бренд (vars.sass)
+  brandNeo:          '#4BD0A0',   // $c-brand-neo — мятно-зелёный Нетологии
+  brandNeoHover:     '#65EBC3',   // 2-я точка градиента из apps/blog
+  brandNeoActive:    '#37BC8B',   // придумано (темнее для :active)
+  brandNeoInk:       '#2B8A64',   // придумано: зелёный для ТЕКСТА (контраст 4.27 на белом)
+  brandBlue:         '#0066FF',   // $c-brand-accent
+  gradient:          ['#4BD0A0', '#65EBC3', '#B3FBFB'],
+
+  // Узлы (архив, семейство A)
+  nodeFill:          '#F3F4F7',   // $c-light-grey, точно совпало с замером архива (#F3F4F7)
+  nodeStroke:        '#D0D7DD',   // архив, 4 вхождения в стилях landings
+  nodeAccentFill:    '#4BD0A0',
+  nodeMutedFill:     '#FAFBFC',   // придумано
   nodeMutedStroke:   '#D0D7DD',
 
   // Тинты
-  tintAccent:        '#D5F5EE',   // архив
-  tintAccentStrong:  '#BDF8EC',   // архив
-
-  // Градиент (только для акцентной заливки, опция)
-  gradientFrom:      '#69EAC8',   // архив
-  gradientTo:        '#4AE6EA',   // архив
+  tintAccent:        '#E8FBF3',   // придумано на базе --on-light-surface-accent-minor
+  borderSubtle:      '#E3E5E9',   // из стилей landings
 
   // Рёбра
-  edgeNeutral:       '#C4C5C4',   // архив
-  edgeAccent:        '#3DD8B0',   // архив
-  edgeLabelBg:       '#FFFFFF',   // архив: подпись лежит на белой подложке
-
-  // Вторичный акцент (используется редко, напр. «группа» второго уровня)
-  secondary:         '#2784D7',   // архив (1 слайд из 25)
+  edgeNeutral:       '#9FA3A7',   // архив (#C4C5C4) + landings (#9FA3A7) → взято контрастнее
+  edgeAccent:        '#4BD0A0',
+  edgeLabelBg:       '#FFFFFF',
 } as const
 ```
 
-### ⚠️ Предупреждение по контрасту (проверено расчётом, не на глаз)
+### Контраст (посчитано, не на глаз)
 
-| Комбинация | Контраст | Вывод |
+| Комбинация | Контраст | Решение |
 |---|---|---|
-| белый текст на `#3DD8B0` | **1.80 : 1** | так сделано в архиве, но это **нечитаемо** (норма ≥ 4.5) |
-| `#1F2226` на `#3DD8B0` | **8.86 : 1** | читаемо |
-| `#1F2226` на `#F2F4F6` | 14.48 : 1 | отлично |
-| `#898989` на `#F2F4F6` | 3.17 : 1 | ок для крупного текста, для мелкого — граница |
+| `#4BD0A0` на белом (как текст/иконка) | **1.94 : 1** | не использовать для текста |
+| `#2B8A64` на белом (зелёный текст) | **4.27 : 1** | использовать для текста-акцента |
+| `#27292D` на `#4BD0A0` (текст в акцентном узле) | **7.51 : 1** | ✅ так и делаем |
+| белый на `#4BD0A0` | 1.94 : 1 | ❌ так в архиве, но нечитаемо |
+| `#27292D` на `#F3F4F7` | 14.4 : 1 | ✅ |
 
-`[РЕШЕНО]` В акцентных узлах используем **тёмный текст `#1F2226`**, а не белый как в архиве. Это ровно тот случай, где «убираем человеческий фактор»: в архиве белый на мятном — декоративный приём, в автогенерации он даёт непередаваемые скриншоты.
-Если нужна буквальная верность архиву — флаг `theme.accentTextMode: 'light' | 'dark'`.
+`[РЕШЕНО]` В акцентных узлах — **тёмный текст**. Флаг `accentTextMode: 'light'` оставляем для буквальной верности архиву.
 
 ---
 
@@ -61,24 +108,26 @@ export const color = {
 
 ```ts
 export const font = {
-  family: "'Golos Text', -apple-system, BlinkMacSystemFont, Arial, sans-serif",
-  mono:   "'Roboto Mono', ui-monospace, monospace",   // для `code` в лейблах
+  // $default-font из vars.sass лендингов: "Sans Display, Arial, sans-serif"
+  family: "'Sans Display', Arial, sans-serif",
+  familySecondary: "'Golos Text', Arial, sans-serif",  // мелкие подписи
+  mono: "'Roboto Mono', ui-monospace, monospace",
   weight: { regular: 400, medium: 500, semibold: 600, bold: 700 },
 }
 
 export const type = {
-  node:      { size: 18, lineHeight: 1.3, minSize: 11 },   // придумано (в архиве 18–20 на слайде 960 px)
-  edgeLabel: { size: 16, lineHeight: 1.3 },                // придумано
-  groupLabel:{ size: 16, lineHeight: 1.3 },                // придумано
+  node:       { size: 18, lineHeight: 1.3, minSize: 11 },
+  edgeLabel:  { size: 16, lineHeight: 1.3 },
+  groupLabel: { size: 16, lineHeight: 1.3 },
 }
 ```
 
-Файлы шрифта (копируются из `apps/landings/public/next-fonts/`):
-`golos_text_regular.woff2`, `golos_text_medium.woff2`, `golos_text_demibold.woff2`, `golos_text_bold.woff2`.
+Файлы: `apps/landings/public/next-fonts/sans_display/sans_display_{regular,medium,semibold,bold}.woff2`
+(+ `.../golos_text_*.woff2` при необходимости).
 
-`[РИСК]` Что в архиве именно Golos Text — не доказано. Проверяется одним сравнением: отрендерить «Шаг 1 · модель» и наложить на кроп слайда.
+`[ВОПРОС, не блокирует]` DS-кнопки используют `SB Sans Text`. Для схем берём `Sans Display` (это `$default-font`). Если нужна полная консистентность с DS — скажи, поставлю `SB Sans Text` везде.
 
-`[РЕШЕНО]` Первая строка лейбла в архиве часто semibold («**Шаг 1** / модель»). Правило: начертание берём из markdown (`**`) — если в разметке нет `**`, весь лейбл regular. Ничего не «угадываем».
+`[НЕ ПРОВЕРЕНО]` Что в архиве именно `Sans Display` — совпадение по стилю, не доказательство. Проверяется наложением рендера на кроп слайда.
 
 ---
 
@@ -86,58 +135,57 @@ export const type = {
 
 ```ts
 export const size = {
-  radius: 12,            // архив: измерено ≈10 px, берём 12
-  strokeWidth: 1,        // архив
-  edgeWidth: 2,          // архив: семейство A ≈2 px
-  edgeWidthThick: 2.5,   // для `==>`
-  dash: '6 4',           // пунктир рёбер
-  arrow: 8,              // придумано: фиксированный размер наконечника (квадрат 8×8)
+  radius: 12,            // $border-radius-m: 12px в vars.sass — точное совпадение
+  strokeWidth: 1,
+  edgeWidth: 2,          // архив, семейство A
+  edgeWidthThick: 2.5,   // `==>`
+  dash: '6 4',
+  arrow: 8,              // придумано
 
   paddingX: 16,          // придумано
   paddingY: 12,          // придумано
 
   nodeMinWidth: 120,     // придумано
-  nodeMaxWidth: 260,     // придумано — ключевое число требования «не растягивать бокс»
+  nodeMaxWidth: 260,     // придумано — ключевое число «не растягивать бокс»
   nodeMinHeight: 56,     // придумано
   nodeMaxHeight: 132,    // придумано
 
-  layerSpacing: 64,      // ELK: расстояние между слоями
-  nodeSpacing: 40,       // ELK: между узлами в слое
+  layerSpacing: 64,      // ELK
+  nodeSpacing: 40,       // ELK
   canvasPadding: 32,     // придумано
   groupPadding: 24,      // придумано
 }
 ```
 
-### Правила распределения текста (fit-text)
+### Распределение текста (fit-text)
 
 | Форма | Текстовая область |
 |---|---|
 | `box`, `pill`, `round` | `width - 2*16` × `height - 2*12` |
-| `decision` (ромб) | **`0.60 * width` × `0.50 * height`** (вписанный прямоугольник), иначе текст вылезает за скосы |
+| `decision` (ромб) | **`0.60 * width` × `0.50 * height`** — иначе текст вылезает за скосы |
 | `circle` | `0.70 * diameter` × `0.70 * diameter` |
 | `hexagon` | `0.75 * width` × `height - 2*12` |
 
-Порядок: `wrap @ 18px` → если влезает, бокс = фактическая ширина (в пределах min/max) → иначе бинарный поиск `fontSize` в `[11, 18]` → если не влезает и 11 px, троеточие.
+Порядок: `wrap @ 18px` → влезает: бокс = фактическая ширина (в пределах min/max) → не влезает: бинарный поиск `fontSize` в `[11, 18]` → не влезает и 11 px: троеточие.
 Бокс **никогда** не растёт из-за текста сверх `nodeMaxWidth × nodeMaxHeight`.
 
 ---
 
-## 4. Маппинг фигур Mermaid → наши «кирпичи»
+## 4. Маппинг фигур Mermaid → «кирпичи»
 
 | Mermaid | role | Как рисуем |
 |---|---|---|
 | `A[текст]` | `box` | прямоугольник r=12, `nodeFill` |
-| `A(текст)` | `round` | то же (визуально идентично box — стандартизация) |
-| `A([текст])` | `pill` | радиус = height/2, `nodeFill` |
-| `A{текст}` | `decision` | ромб, `nodeFill` |
-| `A((текст))` | `circle` | круг, `nodeFill` |
-| `A{{текст}}` | `hexagon` | шестиугольник, `nodeFill` |
-| `A[[..]]`, `A[(..)]`, `A>..]`, `A[/../]`, `A[\..\]`, `A[/..\]`, `A[\../]` | `box` | **нейтральный бокс** (стандартизация экзотики) |
+| `A(текст)` | `round` | то же (стандартизация) |
+| `A([текст])` | `pill` | радиус = height/2 |
+| `A{текст}` | `decision` | ромб |
+| `A((текст))` | `circle` | круг |
+| `A{{текст}}` | `hexagon` | шестиугольник |
+| `[[ ]]`, `[( )]`, `> ]`, `[/ /]`, `[\ \]`, `[/ \]`, `[\ /]` | `box` | нейтральный бокс |
 | `subgraph` | `group` | пунктирный контейнер + подпись |
-| — | `accent` | `nodeAccentFill`, тёмный текст — **только** если в разметке явно помечен (см. ниже) |
+| `A:::accent` | `accent` | `nodeAccentFill` + тёмный текст |
 
-`[НУЖНО РЕШЕНИЕ, не блокирует]` Как в Mermaid-разметке «пометить акцентный узел», если `classDef` мы игнорируем?
-Предлагаю: `A[!текст]` (восклицательный знак в начале) → акцент; либо специальный класс `A:::accent` (единственный разрешённый). Второй вариант совместимее с Mermaid — беру его как дефолт, `!` как альтернативу.
+`[НУЖНО РЕШЕНИЕ, не блокирует]` Способ пометить акцентный узел: `:::accent` (совместимо с Mermaid) — мой выбор по умолчанию.
 
 ---
 
@@ -145,7 +193,7 @@ export const size = {
 
 | Что | Как закрыть |
 |---|---|
-| Шрифт архива = Golos Text? | наложить рендер на кроп слайда |
-| base64-шрифт в SVG → PNG в Safari | спайк №0 (см. PLAN §9) |
-| Метрики глифов Golos в `canvas.measureText` vs SVG | зафиксировать в юнит-тестах (допуск ±2 %) |
-| Контраст `#898989` для подписей рёбер | если мелко — затемнить до `#6B6B6B` |
+| Шрифт архива = `Sans Display`? | наложить рендер на кроп слайда |
+| base64-шрифт в SVG → PNG в Safari | спайк №0 (PLAN §9) |
+| `canvas.measureText` vs SVG-рендер для `Sans Display` | юнит-тест с допуском ±2 % |
+| Нужен ли `SB Sans Text` вместо `Sans Display` для консистентности с DS | вопрос выше |

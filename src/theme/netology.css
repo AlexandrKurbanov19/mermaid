@@ -1,0 +1,32 @@
+/*
+  Бренд Нетологии поверх темы DS.
+  Источник зелёного: libs/shared/src/stylesheets/vars.sass -> $c-brand-neo: #4BD0A0
+  Градиент: apps/blog/src/pages/news-page -> linear-gradient(#4BD0A0, #65EBC3, #B3FBFB)
+  Синий: $c-brand-accent: #0066FF
+*/
+:root {
+  --neto-green: #4bd0a0;
+  --neto-green-light: #65ebc3;
+  --neto-green-pale: #b3fbfb;
+  --neto-green-dark: #37bc8b;
+  --neto-green-ink: #2b8a64;
+  --neto-blue: #0066ff;
+  --neto-grey-fill: #f3f4f7;
+  --neto-grey-border: #d0d7dd;
+  --neto-text: #27292d;
+
+  /* Переопределяем акцент DS на бренд-зелёный */
+  --on-light-surface-accent: #4bd0a0;
+  --on-light-surface-accent-hover: #65ebc3;
+  --on-light-surface-accent-active: #37bc8b;
+  --on-light-surface-accent-minor: #e8fbf3;
+  --on-light-outline-accent: #4bd0a0;
+  /* текст «ссылочного» зелёного — темнее, иначе контраст 1.94:1 на белом */
+  --on-light-text-accent: #2b8a64;
+
+  /* DS подставляет алиасы уже РЕЗОЛВНУТЫМИ литералами через runtime-стили,
+     поэтому одного :root недостаточно — нужен !important */
+  --surface-accent: #4bd0a0 !important;
+  --surface-accent-hover: #65ebc3 !important;
+  --surface-accent-active: #37bc8b !important;
+}
