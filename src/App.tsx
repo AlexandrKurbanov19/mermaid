@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { parseMermaid, type ParseError } from './diagram/parse/parseMermaid'
-import { textBlockToString } from './diagram/parse/label'
 import type { DiagramIR } from './diagram/ir'
 import { measurer } from './diagram/measure/textMetrics'
-import { measureNodes } from './diagram/measure/measureNode'
+import { measureNodes, type NodeBox } from './diagram/measure/measureNode'
+import { layoutDiagram, type Layout } from './diagram/layout/layoutElk'
+import { DiagramSvg } from './diagram/render/DiagramSvg'
+import { toSvgString, downloadSvg, downloadBlob } from './diagram/export/toSvgString'
+import { svgToPngBlob } from './diagram/export/toPng'
 import { font, type as typography } from './diagram/theme'
 
 const DEFAULT_SOURCE = `graph TD
@@ -12,9 +15,8 @@ const DEFAULT_SOURCE = `graph TD
     B -- нет --> D[Показать логин]
     D --> B`
 
-type State =
+type ParseState =
   | { status: 'idle' }
-  | { status: 'parsing' }
   | { status: 'ok'; ir: DiagramIR }
   | { status: 'error'; error: ParseError }
 
@@ -27,7 +29,6 @@ function plural(n: number, one: string, few: string, many: string): string {
   return `${n} ${many}`
 }
 
-/** Дебаунс, чтобы не парсить на каждый символ. */
 function useDebounced<T>(value: T, delay = 300): T {
   const [debounced, setDebounced] = useState(value)
   useEffect(() => {
@@ -40,36 +41,83 @@ function useDebounced<T>(value: T, delay = 300): T {
 export function App() {
   const [source, setSource] = useState(DEFAULT_SOURCE)
   const debounced = useDebounced(source)
-  const [state, setState] = useState<State>({ status: 'idle' })
+  const [parse, setParse] = useState<ParseState>({ status: 'idle' })
+  const [layout, setLayout] = useState<Layout | null>(null)
+  const [busy, setBusy] = useState<null | 'png' | 'svg'>(null)
+  const [exportError, setExportError] = useState<string | null>(null)
+  const svgRef = useRef<SVGSVGElement>(null)
 
+  // [1-2] mermaid -> IR
   useEffect(() => {
     let cancelled = false
-    setState((prev) => (prev.status === 'ok' ? prev : { status: 'parsing' }))
-
     parseMermaid(debounced).then((res) => {
       if (cancelled) return
-      setState(res.ok ? { status: 'ok', ir: res.ir } : { status: 'error', error: res.error })
+      setParse(res.ok ? { status: 'ok', ir: res.ir } : { status: 'error', error: res.error })
     })
-
     return () => {
       cancelled = true
     }
   }, [debounced])
 
-  const summary = useMemo(() => {
-    if (state.status !== 'ok') return null
-    const { ir } = state
-    return {
-      direction: ir.direction,
-      nodes: ir.nodes.length,
-      edges: ir.edges.length,
-      groups: ir.groups.length,
+  // [3] габариты узлов (fit-text) — синхронно из IR
+  const boxes: Record<string, NodeBox> | null = useMemo(() => {
+    if (parse.status !== 'ok') return null
+    return measureNodes(parse.ir, { family: font.family, weight: font.weight.regular, size: typography.node.size }, measurer)
+  }, [parse])
+
+  // [4] раскладка — асинхронно (ELK)
+  useEffect(() => {
+    if (parse.status !== 'ok' || !boxes) {
+      setLayout(null)
+      return
     }
-  }, [state])
+    let cancelled = false
+    layoutDiagram(parse.ir, boxes).then((result) => {
+      if (!cancelled) setLayout(result)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [parse, boxes])
+
+  const stats = useMemo(() => {
+    if (parse.status !== 'ok' || !boxes) return null
+    const shrunk = parse.ir.nodes.filter((n) => (boxes[n.id]?.fit.fontSize ?? 0) < typography.node.size).length
+    return { nodes: parse.ir.nodes.length, edges: parse.ir.edges.length, shrunk }
+  }, [parse, boxes])
+
+  const ready = parse.status === 'ok' && !!boxes && !!layout
+
+  const handleSvg = async () => {
+    if (!svgRef.current) return
+    setBusy('svg')
+    setExportError(null)
+    try {
+      downloadSvg(await toSvgString(svgRef.current), 'schema.svg')
+    } catch (e) {
+      setExportError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const handlePng = async () => {
+    if (!svgRef.current) return
+    setBusy('png')
+    setExportError(null)
+    try {
+      const svgString = await toSvgString(svgRef.current)
+      const blob = await svgToPngBlob(svgString, { scale: 2 })
+      downloadBlob(blob, 'schema.png')
+    } catch (e) {
+      setExportError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusy(null)
+    }
+  }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, padding: 24, height: '100vh' }}>
-      {/* левая колонка — разметка */}
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) 1.2fr', gap: 24, padding: 24, height: '100vh' }}>
       <section style={{ display: 'grid', gridTemplateRows: 'auto 1fr', gap: 8, minHeight: 0 }}>
         <h1 style={{ margin: 0, fontSize: 20 }}>Mermaid</h1>
         <textarea
@@ -91,15 +139,13 @@ export function App() {
         />
       </section>
 
-      {/* правая колонка — превью (SVG будет на следующем этапе) */}
       <section style={{ display: 'grid', gridTemplateRows: 'auto 1fr auto', gap: 12, minHeight: 0 }}>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
           <h1 style={{ margin: 0, fontSize: 20 }}>Предпросмотр</h1>
-          {summary && (
+          {stats && (
             <span style={{ color: '#808080', fontSize: 13 }}>
-              {summary.direction} · {plural(summary.nodes, 'узел', 'узла', 'узлов')} ·{' '}
-              {plural(summary.edges, 'связь', 'связи', 'связей')}
-              {summary.groups ? ` · ${plural(summary.groups, 'группа', 'группы', 'групп')}` : ''}
+              {plural(stats.nodes, 'узел', 'узла', 'узлов')} · {plural(stats.edges, 'связь', 'связи', 'связей')}
+              {stats.shrunk ? ` · ${stats.shrunk} с уменьшенным шрифтом` : ''}
             </span>
           )}
         </div>
@@ -114,96 +160,48 @@ export function App() {
             background: '#fff',
           }}
         >
-          {state.status === 'error' && (
+          {parse.status === 'error' && (
             <div style={{ color: '#B93A33', fontSize: 14 }}>
               <strong>Не удалось разобрать разметку</strong>
               <div style={{ marginTop: 6 }}>
-                {state.error.line ? `Строка ${state.error.line}: ` : ''}
-                {state.error.message}
+                {parse.error.line ? `Строка ${parse.error.line}: ` : ''}
+                {parse.error.message}
               </div>
             </div>
           )}
 
-          {state.status !== 'error' && state.status !== 'ok' && <div style={{ color: '#808080' }}>Разбираю…</div>}
+          {parse.status === 'idle' && <div style={{ color: '#808080' }}>Разбираю…</div>}
 
-          {state.status === 'ok' && <IRPreview ir={state.ir} />}
+          {parse.status === 'ok' && (
+            <div style={{ display: 'grid', gap: 12 }}>
+              {parse.ir.warnings.map((w) => (
+                <div
+                  key={w}
+                  style={{ background: '#FFF7E6', border: '1px solid #F3D9A4', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}
+                >
+                  {w}
+                </div>
+              ))}
+              {boxes && layout ? (
+                <DiagramSvg ir={parse.ir} boxes={boxes} layout={layout} svgRef={svgRef} />
+              ) : (
+                <div style={{ color: '#808080' }}>Считаю раскладку…</div>
+              )}
+            </div>
+          )}
         </div>
 
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button disabled style={btnStyle}>
-            Скачать PNG
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <button type="button" style={btnStyle} disabled={!ready || busy !== null} onClick={handlePng}>
+            {busy === 'png' ? 'Готовлю PNG…' : 'Скачать PNG'}
           </button>
-          <button disabled style={btnStyle}>
-            Скачать SVG
+          <button type="button" style={btnStyle} disabled={!ready || busy !== null} onClick={handleSvg}>
+            {busy === 'svg' ? 'Готовлю SVG…' : 'Скачать SVG'}
           </button>
-          <span style={{ alignSelf: 'center', color: '#808080', fontSize: 12 }}>
-            кнопки включатся после этапа рендера
-          </span>
+          <span style={{ color: '#808080', fontSize: 12 }}>PNG 2×, белый фон</span>
+          {exportError && <span style={{ color: '#B93A33', fontSize: 12 }}>{exportError}</span>}
         </div>
       </section>
-    </div>
-  )
-}
-
-/** Пока рендера нет — показываем разобранную модель + посчитанные габариты узлов. */
-function IRPreview({ ir }: { ir: DiagramIR }) {
-  const boxes = useMemo(
-    () =>
-      measureNodes(ir, { family: font.family, weight: font.weight.regular, size: typography.node.size }, measurer),
-    [ir],
-  )
-  const shrunk = ir.nodes.filter((n) => (boxes[n.id]?.fit.fontSize ?? 0) < typography.node.size).length
-  const truncated = ir.nodes.filter((n) => boxes[n.id]?.fit.truncated).length
-
-  return (
-    <div style={{ display: 'grid', gap: 16, fontSize: 13 }}>
-      {ir.warnings.map((w) => (
-        <div key={w} style={{ background: '#FFF7E6', border: '1px solid #F3D9A4', borderRadius: 8, padding: '8px 10px' }}>
-          {w}
-        </div>
-      ))}
-
-      <div>
-        <div style={{ fontWeight: 600, marginBottom: 6 }}>
-          Узлы{' '}
-          <span style={{ fontWeight: 400, color: '#808080' }}>
-            {shrunk ? `· ${shrunk} с уменьшенным шрифтом` : '· шрифт везде базовый'}
-            {truncated ? ` · ${truncated} обрезано` : ''}
-          </span>
-        </div>
-        <ul style={{ margin: 0, paddingLeft: 18 }}>
-          {ir.nodes.map((n) => {
-            const box = boxes[n.id]
-            return (
-              <li key={n.id}>
-                <code>{n.id}</code> — {n.role}: «{textBlockToString(n.label)}»
-                {box && (
-                  <span style={{ color: '#808080' }}>
-                    {' '}
-                    [{Math.round(box.width)}×{Math.round(box.height)}, {box.fit.fontSize} px
-                    {box.fit.lines.length ? `, ${box.fit.lines.length} стр.` : ''}]
-                  </span>
-                )}
-              </li>
-            )
-          })}
-        </ul>
-      </div>
-
-      <div>
-        <div style={{ fontWeight: 600, marginBottom: 6 }}>Связи</div>
-        <ul style={{ margin: 0, paddingLeft: 18 }}>
-          {ir.edges.map((e) => (
-            <li key={e.id}>
-              <code>
-                {e.from} → {e.to}
-              </code>{' '}
-              ({e.kind}, {e.arrow})
-              {e.label ? ` — «${textBlockToString(e.label)}»` : ''}
-            </li>
-          ))}
-        </ul>
-      </div>
     </div>
   )
 }

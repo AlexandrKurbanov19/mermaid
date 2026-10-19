@@ -14,6 +14,7 @@
   "dependencies": {
     "@salutejs/plasma-themes": "0.45.0",
     "@salutejs/sdds-netology": "0.343.0",
+    "elkjs": "^0.11.0",
     "mermaid": "^12.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
