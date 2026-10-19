@@ -9,6 +9,7 @@ import { layoutTimeline } from './diagram/layout/layoutTimeline'
 import { DiagramSvg } from './diagram/render/DiagramSvg'
 import { TimelineSvg } from './diagram/render/TimelineSvg'
 import { ZoomPane } from './diagram/render/ZoomPane'
+import { SyntaxHelp } from './components/SyntaxHelp'
 import { toSvgString, downloadSvg, downloadBlob } from './diagram/export/toSvgString'
 import { svgToPngBlob } from './diagram/export/toPng'
 import { font, type as typography } from './diagram/theme'
@@ -49,6 +50,7 @@ export function App() {
   const [exportError, setExportError] = useState<string | null>(null)
   const [scale, setScale] = useState(2)
   const [transparent, setTransparent] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
   const svgRef = useRef<SVGSVGElement>(null)
 
   const fontSpec = useMemo(
@@ -170,7 +172,17 @@ export function App() {
   return (
     <div className="app">
       <section className="pane pane--editor">
-        <h1 className="pane__title">Mermaid</h1>
+        <div className="pane__head">
+          <h1 className="pane__title">Mermaid</h1>
+          <button
+            type="button"
+            className="syntax-toggle"
+            onClick={() => setHelpOpen((v) => !v)}
+            title="Подсказки по синтаксису"
+          >
+            {helpOpen ? 'Скрыть синтаксис' : 'Синтаксис ?'}
+          </button>
+        </div>
         <div style={{ display: 'grid', gap: 4 }}>
           <select
             value={exampleId}
@@ -190,6 +202,7 @@ export function App() {
               background: '#fff',
             }}
           >
+            <option value="">— свой вариант —</option>
             {EXAMPLES.map((ex) => (
               <option key={ex.id} value={ex.id}>
                 {ex.title}
@@ -201,9 +214,26 @@ export function App() {
         <textarea
           className="editor"
           value={source}
-          onChange={(e) => setSource(e.target.value)}
+          onChange={(e) => {
+            setSource(e.target.value)
+            setExampleId('')
+          }}
           spellCheck={false}
         />
+        <span style={{ fontSize: 12, color: '#808080' }}>
+          Поддерживаются flowchart/graph и timeline. Не помнишь синтаксис — кнопка «Синтаксис ?».
+        </span>
+
+        {helpOpen && (
+          <SyntaxHelp
+            onClose={() => setHelpOpen(false)}
+            onInsert={(code) => {
+              setSource(code)
+              setExampleId('')
+              setHelpOpen(false)
+            }}
+          />
+        )}
       </section>
 
       <section className="pane pane--preview">
