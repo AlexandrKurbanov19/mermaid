@@ -25,7 +25,8 @@ export type NodeRole =
   | 'circle' // A((текст))
   | 'hexagon' // A{{текст}}
   | 'decision' // A{текст} — ромб
-  | 'accent' // A:::accent — брендовая заливка
+  | 'accent' // A:::accent — брендовая заливка (градиент)
+  | 'muted' // A:::muted — пунктирная рамка, «необязательный/будущий» шаг
 
 /** Фрагмент текста с начертанием: лейблы в mermaid умеют markdown. */
 export interface InlineRun {

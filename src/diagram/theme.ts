@@ -27,6 +27,10 @@ export const color = {
   nodeMutedFill: '#FAFBFC',
   nodeMutedStroke: '#D0D7DD',
 
+  /** градиент «активного» блока из архива: mint -> cyan */
+  gradientFrom: '#4BD0A0',
+  gradientTo: '#65EBC3',
+
   tintAccent: '#E8FBF3',
   borderSubtle: '#E3E5E9',
 
@@ -39,6 +43,8 @@ export const color = {
   edgeLabelBg: '#FFFFFF',
   groupStroke: '#9FA3A7',
   groupLabel: '#808080',
+  mutedFill: '#FFFFFF',
+  mutedStroke: '#C4C5C4',
 } as const
 
 export const font = {
@@ -88,6 +94,7 @@ export const textArea = {
   decision: { width: 0.6, height: 0.5 },
   circle: { width: 0.7, height: 0.7 },
   accent: { width: 1, height: 1 },
+  muted: { width: 1, height: 1 },
 } as const
 
 export const theme = { color, font, type, size, textArea } as const

@@ -58,8 +58,9 @@ const DIRECTION: Record<string, Direction> = {
   RL: 'RL',
 }
 
-/** Класс, которым пользователь помечает акцентный узел. */
+/** Классы-маркеры: единственный разрешённый способ влиять на вид узла. */
 export const ACCENT_CLASS = 'accent'
+export const MUTED_CLASS = 'muted'
 
 function toArray<T>(maybeMap: unknown): T[] {
   if (maybeMap instanceof Map) return [...maybeMap.values()] as T[]
@@ -121,6 +122,7 @@ export function normalize(db: any, source: string): DiagramIR {
 
     const classes: string[] = Array.isArray(v.classes) ? v.classes : []
     if (classes.includes(ACCENT_CLASS)) role = 'accent'
+    else if (classes.includes(MUTED_CLASS)) role = 'muted'
 
     return {
       id: v.id as string,

@@ -128,11 +128,12 @@ export const EXAMPLES: Example[] = [
   },
   {
     id: 'accent',
-    title: '15. Акцентный узел',
-    checks: ':::accent даёт брендовую заливку',
+    title: '15. Акцентный и приглушённый узлы',
+    checks: ':::accent — брендовый градиент; :::muted — пунктирная рамка',
     source: `graph TD
     A[Обычный шаг] --> B[Важный шаг]:::accent
-    B --> C[Финал]`,
+    B --> C[Необязательный шаг]:::muted
+    C --> D[Финал]`,
   },
   {
     id: 'styles-ignored',
