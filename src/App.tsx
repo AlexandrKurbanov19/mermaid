@@ -9,11 +9,9 @@ import { toSvgString, downloadSvg, downloadBlob } from './diagram/export/toSvgSt
 import { svgToPngBlob } from './diagram/export/toPng'
 import { font, type as typography } from './diagram/theme'
 
-const DEFAULT_SOURCE = `graph TD
-    A[Пользователь] --> B{Авторизован?}
-    B -- да --> C[Открыть дашборд]
-    B -- нет --> D[Показать логин]
-    D --> B`
+import { EXAMPLES, DEFAULT_EXAMPLE } from './examples'
+
+const DEFAULT_SOURCE = DEFAULT_EXAMPLE.source
 
 type ParseState =
   | { status: 'idle' }
@@ -40,6 +38,7 @@ function useDebounced<T>(value: T, delay = 300): T {
 
 export function App() {
   const [source, setSource] = useState(DEFAULT_SOURCE)
+  const [exampleId, setExampleId] = useState(DEFAULT_EXAMPLE.id)
   const debounced = useDebounced(source)
   const [parse, setParse] = useState<ParseState>({ status: 'idle' })
   const [layout, setLayout] = useState<Layout | null>(null)
@@ -118,8 +117,37 @@ export function App() {
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) 1.2fr', gap: 24, padding: 24, height: '100vh' }}>
-      <section style={{ display: 'grid', gridTemplateRows: 'auto 1fr', gap: 8, minHeight: 0 }}>
+      <section style={{ display: 'grid', gridTemplateRows: 'auto auto 1fr', gap: 8, minHeight: 0 }}>
         <h1 style={{ margin: 0, fontSize: 20 }}>Mermaid</h1>
+        <div style={{ display: 'grid', gap: 4 }}>
+          <select
+            value={exampleId}
+            onChange={(e) => {
+              const next = EXAMPLES.find((x) => x.id === e.target.value)
+              if (!next) return
+              setExampleId(next.id)
+              setSource(next.source)
+            }}
+            style={{
+              height: 36,
+              borderRadius: 12,
+              border: '1px solid #D0D7DD',
+              padding: '0 10px',
+              fontFamily: 'inherit',
+              fontSize: 13,
+              background: '#fff',
+            }}
+          >
+            {EXAMPLES.map((ex) => (
+              <option key={ex.id} value={ex.id}>
+                {ex.title}
+              </option>
+            ))}
+          </select>
+          <span style={{ fontSize: 12, color: '#808080' }}>
+            {EXAMPLES.find((x) => x.id === exampleId)?.checks}
+          </span>
+        </div>
         <textarea
           value={source}
           onChange={(e) => setSource(e.target.value)}
