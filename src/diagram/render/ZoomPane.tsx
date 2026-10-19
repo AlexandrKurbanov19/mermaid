@@ -14,6 +14,8 @@ import { color } from '../theme'
 interface Props {
   width: number
   height: number
+  /** меняется при смене схемы: тогда вид сбрасывается на «вписать» */
+  contentKey?: string
   children: React.ReactNode
 }
 
@@ -40,7 +42,7 @@ function clampAxis(pos: number, viewport: number, content: number): number {
   return clamp(pos, viewport - content - SLACK, SLACK)
 }
 
-export function ZoomPane({ width, height, children }: Props) {
+export function ZoomPane({ width, height, contentKey, children }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   const viewRef = useRef<View>({ scale: 1, x: 0, y: 0 })
@@ -79,7 +81,14 @@ export function ZoomPane({ width, height, children }: Props) {
     )
   }, [width, height, apply])
 
-  // новая схема (другие габариты) — вписываем заново
+  // новая схема — вписываем заново, даже если пользователь масштабировал предыдущую
+  useEffect(() => {
+    autoFitRef.current = true
+    fit()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contentKey])
+
+  // габариты изменились (тот же контент) — тоже пересчитываем
   useEffect(() => {
     fit()
   }, [fit])

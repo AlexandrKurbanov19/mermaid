@@ -24,6 +24,8 @@ export const color = {
   nodeFill: '#F3F4F7',
   nodeStroke: '#D0D7DD',
   nodeAccentFill: '#4BD0A0',
+  /** вторичный акцент: --on-light-surface-accent-minor из темы Plasma (в архиве — #C2DCFE) */
+  nodeSecondaryFill: '#DEE9FF',
   nodeMutedFill: '#FAFBFC',
   nodeMutedStroke: '#D0D7DD',
 
@@ -91,10 +93,40 @@ export const textArea = {
   round: { width: 1, height: 1 },
   pill: { width: 1, height: 1 },
   hexagon: { width: 0.75, height: 1 },
+  chevron: { width: 0.75, height: 1 },
   decision: { width: 0.6, height: 0.5 },
   circle: { width: 0.7, height: 0.7 },
   accent: { width: 1, height: 1 },
+  secondary: { width: 1, height: 1 },
   muted: { width: 1, height: 1 },
+} as const
+
+/** Бейдж-кружок с номером внутри узла (как в архиве: «1. Понять проблему»). */
+export const badge = {
+  size: 36,
+  gap: 8,
+  strokeWidth: 1,
+  fontSize: 16,
+  /** сколько места бейдж отнимает у текста узла */
+  reserve: 36 + 8,
+} as const
+
+/** Таймлайн: замерено по архиву (image 6: ⌀71 на слайде 960, шаг 154; image 14: ⌀114, шаг 280). */
+export const timeline = {
+  circleDiameter: 56,
+  step: 180,
+  labelWidth: 160,
+  connector: 40,
+  labelGap: 8,
+  axisWidth: 2,
+  axisColor: '#E4E9EB',
+  connectorColor: '#C4C5C4',
+  dotRadius: 2,
+  circleFontSize: 16,
+  circleMinFontSize: 10,
+  titleFontSize: 16,
+  eventFontSize: 14,
+  padding: 32,
 } as const
 
 export const theme = { color, font, type, size, textArea } as const

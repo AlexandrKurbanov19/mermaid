@@ -1,6 +1,6 @@
 import {
   IR_VERSION,
-  type DiagramIR,
+  type FlowchartIR,
   type Direction,
   type EdgeArrow,
   type EdgeKind,
@@ -8,6 +8,7 @@ import {
   type IRNode,
   type IREdge,
   type NodeRole,
+  type TextBlock,
 } from '../ir'
 import { parseLabel } from './label'
 
@@ -32,7 +33,7 @@ const SHAPE_TO_ROLE: Record<string, NodeRole> = {
   // ниже — экзотика: сводим к обычному блоку (стандартизация, см. docs/THEME.md §4)
   subroutine: 'box',
   cylinder: 'box',
-  odd: 'box',
+  odd: 'chevron',
   lean_right: 'box',
   lean_left: 'box',
   trapezoid: 'box',
@@ -60,7 +61,46 @@ const DIRECTION: Record<string, Direction> = {
 
 /** Классы-маркеры: единственный разрешённый способ влиять на вид узла. */
 export const ACCENT_CLASS = 'accent'
+export const SECONDARY_CLASS = 'secondary'
 export const MUTED_CLASS = 'muted'
+
+/**
+ * Бейдж-номер: «1. Понять проблему» -> badge «1», лейбл «Понять проблему».
+ * Регулярка требует пробел после точки/скобки и не больше 3 цифр,
+ * поэтому «1.5 млн» и «2022 год» бейджами не становятся.
+ */
+const BADGE_RE = /^(\d{1,3})[.)]\s+/
+
+function dropLeadingChars(runs: TextBlock['lines'][number], count: number): TextBlock['lines'][number] {
+  let left = count
+  const out: TextBlock['lines'][number] = []
+  for (const run of runs) {
+    if (left <= 0) {
+      out.push(run)
+      continue
+    }
+    if (run.text.length <= left) {
+      left -= run.text.length
+      continue
+    }
+    out.push({ ...run, text: run.text.slice(left) })
+    left = 0
+  }
+  return out
+}
+
+export function extractBadge(label: TextBlock): { badge?: string; label: TextBlock } {
+  if (!label.lines.length) return { label }
+
+  const firstLine = label.lines[0]
+  const text = firstLine.map((r) => r.text).join('')
+  const match = BADGE_RE.exec(text)
+  if (!match) return { label }
+
+  const restFirstLine = dropLeadingChars(firstLine, match[0].length).filter((r) => r.text.length > 0)
+  const lines = [restFirstLine, ...label.lines.slice(1)].filter((line) => line.length > 0)
+  return { badge: match[1], label: { lines } }
+}
 
 function toArray<T>(maybeMap: unknown): T[] {
   if (maybeMap instanceof Map) return [...maybeMap.values()] as T[]
@@ -103,7 +143,7 @@ function scanIgnored(source: string): string[] {
   return found
 }
 
-export function normalize(db: any, source: string): DiagramIR {
+export function normalize(db: any, source: string): FlowchartIR {
   const warnings: string[] = []
 
   const rawDirection: string | undefined = db.getDirection?.()
@@ -122,12 +162,16 @@ export function normalize(db: any, source: string): DiagramIR {
 
     const classes: string[] = Array.isArray(v.classes) ? v.classes : []
     if (classes.includes(ACCENT_CLASS)) role = 'accent'
+    else if (classes.includes(SECONDARY_CLASS)) role = 'secondary'
     else if (classes.includes(MUTED_CLASS)) role = 'muted'
+
+    const { badge, label } = extractBadge(parseLabel(v.text as string, v.labelType as string))
 
     return {
       id: v.id as string,
       role,
-      label: parseLabel(v.text as string, v.labelType as string),
+      label,
+      ...(badge ? { badge } : {}),
     }
   })
 
@@ -181,5 +225,5 @@ export function normalize(db: any, source: string): DiagramIR {
     )
   }
 
-  return { v: IR_VERSION, direction, nodes, edges, groups, warnings }
+  return { v: IR_VERSION, type: 'flowchart', direction, nodes, edges, groups, warnings }
 }

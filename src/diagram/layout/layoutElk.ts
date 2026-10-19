@@ -1,5 +1,5 @@
 import ELK from 'elkjs/lib/elk.bundled.js'
-import type { DiagramIR, Direction } from '../ir'
+import type { FlowchartIR, Direction } from '../ir'
 import type { NodeBox } from '../measure/measureNode'
 import { size } from '../theme'
 
@@ -74,7 +74,7 @@ const GROUP_PADDING_X = 20
 const GROUP_PADDING_BOTTOM = 20
 
 export async function layoutDiagram(
-  ir: DiagramIR,
+  ir: FlowchartIR,
   boxes: Record<string, NodeBox>,
   opts: LayoutOptions = {},
 ): Promise<Layout> {

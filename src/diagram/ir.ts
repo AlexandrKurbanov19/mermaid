@@ -8,9 +8,12 @@
  *   - зато есть всё, что нужно рендереру.
  *
  * Версия обязательна: рендерер и тесты опираются на неё.
+ * Формат размеченный: `type` определяет, какой набор полей заполнен.
  */
 
 export const IR_VERSION = 1 as const
+
+export type DiagramType = 'flowchart' | 'timeline'
 
 export type Direction = 'TB' | 'BT' | 'LR' | 'RL'
 
@@ -24,8 +27,10 @@ export type NodeRole =
   | 'pill' // A([текст]) — стадион, начало/конец
   | 'circle' // A((текст))
   | 'hexagon' // A{{текст}}
+  | 'chevron' // A>текст] — фигурный блок-стрелка
   | 'decision' // A{текст} — ромб
   | 'accent' // A:::accent — брендовая заливка (градиент)
+  | 'secondary' // A:::secondary — вторичный (синий) акцент
   | 'muted' // A:::muted — пунктирная рамка, «необязательный/будущий» шаг
 
 /** Фрагмент текста с начертанием: лейблы в mermaid умеют markdown. */
@@ -48,6 +53,8 @@ export interface IRNode {
   id: string
   role: NodeRole
   label: TextBlock
+  /** номер/буква в кружке слева: «1» из «1. Понять проблему» */
+  badge?: string
   /** id группы (subgraph), если узел вложен */
   parentId?: string
 }
@@ -67,12 +74,50 @@ export interface IRGroup {
   nodeIds: string[]
 }
 
-export interface DiagramIR {
+interface BaseIR {
   v: typeof IR_VERSION
+  type: DiagramType
+  /** `title ...` из разметки */
+  title?: string
+  /** Не ошибки, а «мы это проигнорировали» — показываем пользователю. */
+  warnings: string[]
+}
+
+export interface FlowchartIR extends BaseIR {
+  type: 'flowchart'
   direction: Direction
   nodes: IRNode[]
   edges: IREdge[]
   groups: IRGroup[]
-  /** Не ошибки, а «мы это проигнорировали» — показываем пользователю. */
-  warnings: string[]
 }
+
+/** Точка на таймлайне: кружок + подпись сверху/снизу. */
+export interface TimelinePoint {
+  id: string
+  /** текст внутри кружка: «2022», «1» */
+  label: TextBlock
+  /** заголовок подписи (semibold) */
+  title?: TextBlock
+  /** детали под заголовком */
+  events: TextBlock[]
+  /** id дорожки (из `section`) */
+  laneId?: string
+}
+
+/** Дорожка = `section` в mermaid timeline. */
+export interface TimelineLane {
+  id: string
+  label?: TextBlock
+  pointIds: string[]
+}
+
+export interface TimelineIR extends BaseIR {
+  type: 'timeline'
+  points: TimelinePoint[]
+  lanes: TimelineLane[]
+}
+
+export type DiagramIR = FlowchartIR | TimelineIR
+
+export const isFlowchart = (ir: DiagramIR): ir is FlowchartIR => ir.type === 'flowchart'
+export const isTimeline = (ir: DiagramIR): ir is TimelineIR => ir.type === 'timeline'

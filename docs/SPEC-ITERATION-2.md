@@ -174,19 +174,19 @@ interface IRNode {
 
 ---
 
-## 6. Чеклист
+## 6. Чеклист (выполнено в итерации 2)
 
-- [ ] **1. Модель.** `ir.ts`: `BaseIR`/`FlowchartIR`/`TimelineIR`, `TimelinePoint`, `TimelineLane`, роли `chevron`/`secondary`, поле `badge`. Обновить импорты в layout/render/App.
-- [ ] **2. Парсинг таймлайна.** `parse/parseTimeline.ts` + ветка в `parseMermaid` по `diagram.type === 'timeline'`; извлечение `title` из исходника.
-- [ ] **3. Нормализация.** `normalizeTimeline(db, source)` → `TimelineIR`; обрезка `[ ]`, `trim()`, распределение label/title, `lanes`.
-- [ ] **4. Бейджи.** В `normalizeFlowchart`: регулярка `^\d{1,3}[.)]\s+` → `badge`, остаток в лейбл (сохранить начертания прогонов).
-- [ ] **5. Новые роли.** `chevron` (из `odd`) и `secondary` (`:::secondary`) — в маппинге, в `measureNode.textArea`, в `SHAPE_STYLE`, в `shapeElement`.
-- [ ] **6. Раскладка таймлайна.** `layout/layoutTimeline.ts` по §3 + тесты.
-- [ ] **7. Рендер таймлайна.** `render/TimelineSvg.tsx` по §4; бейдж и шеврон — в `DiagramSvg.tsx`.
-- [ ] **8. UI.** `App.tsx`: ветвление по `ir.type`; счётчик в шапке («N точек · M событий»); подписи кнопок не меняются.
-- [ ] **9. Кейсы.** `examples.ts`: +3 кейса таймлайна (простой, с секциями, с деталями), +1 кейс с бейджами, +1 с шевроном/синим; перегенерировать `docs/EXAMPLES.md`.
-- [ ] **10. Документация.** `docs/THEME.md`: новые элементы и числа; `docs/COVERAGE.md`: пересчитать вердикты; `README`: список поддерживаемых типов.
-- [ ] **11. Релиз.** `npm test`, `typecheck`, `build`, пуш → проверить деплой и живой сайт.
+- [x] **1. Модель.** `ir.ts`: `BaseIR`/`FlowchartIR`/`TimelineIR`, `TimelinePoint`, `TimelineLane`, роли `chevron`/`secondary`, поле `badge`. Обновить импорты в layout/render/App.
+- [x] **2. Парсинг таймлайна.** `parse/parseTimeline.ts` + ветка в `parseMermaid` по `diagram.type === 'timeline'`; извлечение `title` из исходника.
+- [x] **3. Нормализация.** `normalizeTimeline(db, source)` → `TimelineIR`; обрезка `[ ]`, `trim()`, распределение label/title, `lanes`.
+- [x] **4. Бейджи.** В `normalizeFlowchart`: регулярка `^\d{1,3}[.)]\s+` → `badge`, остаток в лейбл (сохранить начертания прогонов).
+- [x] **5. Новые роли.** `chevron` (из `odd`) и `secondary` (`:::secondary`) — в маппинге, в `measureNode.textArea`, в `SHAPE_STYLE`, в `shapeElement`.
+- [x] **6. Раскладка таймлайна.** `layout/layoutTimeline.ts` по §3 + тесты.
+- [x] **7. Рендер таймлайна.** `render/TimelineSvg.tsx` по §4; бейдж и шеврон — в `DiagramSvg.tsx`.
+- [x] **8. UI.** `App.tsx`: ветвление по `ir.type`; счётчик в шапке («N точек · M событий»); подписи кнопок не меняются.
+- [x] **9. Кейсы.** `examples.ts`: +3 кейса таймлайна (простой, с секциями, с деталями), +1 кейс с бейджами, +1 с шевроном/синим; перегенерировать `docs/EXAMPLES.md`.
+- [x] **10. Документация.** `docs/THEME.md`: новые элементы и числа; `docs/COVERAGE.md`: пересчитать вердикты; `README`: список поддерживаемых типов.
+- [ ] **11. Релиз.** (в процессе: тесты 89 ✅, tsc ✅, build → пуш → проверка живого сайта) `npm test`, `typecheck`, `build`, пуш → проверить деплой и живой сайт.
 
 ---
 

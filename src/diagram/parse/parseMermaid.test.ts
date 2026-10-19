@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { parseMermaid } from './parseMermaid'
 import { textBlockToString } from './label'
-import type { DiagramIR } from '../ir'
+import type { FlowchartIR } from '../ir'
 
-async function ir(source: string): Promise<DiagramIR> {
+async function ir(source: string): Promise<FlowchartIR> {
   const res = await parseMermaid(source)
   if (!res.ok) throw new Error(`ожидали успешный парсинг, получили: ${res.error.message}`)
+  if (res.ir.type !== 'flowchart') throw new Error(`ожидали flowchart, получили ${res.ir.type}`)
   return res.ir
 }
 
@@ -22,6 +23,7 @@ describe('пример из задачи', () => {
     if (!res.ok) return
 
     const { ir } = res
+    if (ir.type !== 'flowchart') throw new Error('ожидали flowchart')
     expect(ir.v).toBe(1)
     expect(ir.direction).toBe('TB')
     expect(ir.nodes.map((n) => n.id)).toEqual(['A', 'B', 'C', 'D'])

@@ -1,6 +1,7 @@
 import mermaid from 'mermaid'
 import type { DiagramIR } from '../ir'
 import { normalize } from './normalize'
+import { normalizeTimeline } from './normalizeTimeline'
 
 /**
  * Шаг [1] пайплайна: Mermaid-разметка -> IR.
@@ -35,8 +36,9 @@ function ensureInit() {
   initialized = true
 }
 
-/** Типы диаграмм, которые мы реально умеем рисовать в v1. */
-const SUPPORTED_TYPES = new Set(['flowchart', 'flowchart-v2', 'graph', 'flow'])
+/** Типы диаграмм, которые мы реально умеем рисовать. */
+const FLOWCHART_TYPES = new Set(['flowchart', 'flowchart-v2', 'graph', 'flow'])
+const TIMELINE_TYPES = new Set(['timeline'])
 
 function extractLine(err: unknown): number | undefined {
   if (typeof err !== 'object' || err === null) return undefined
@@ -80,17 +82,28 @@ export async function parseMermaid(text: string): Promise<ParseResult> {
 
   try {
     const type: string = diagram?.type ?? ''
-    if (type && !SUPPORTED_TYPES.has(type)) {
+    const db = diagram?.db
+
+    if (TIMELINE_TYPES.has(type)) {
+      if (!db || typeof db.getTasks !== 'function') {
+        return {
+          ok: false,
+          error: { kind: 'unsupported-type', message: 'Не удалось разобрать таймлайн.' },
+        }
+      }
+      return { ok: true, ir: normalizeTimeline(db, source) }
+    }
+
+    if (type && !FLOWCHART_TYPES.has(type)) {
       return {
         ok: false,
         error: {
           kind: 'unsupported-type',
-          message: `Тип диаграммы «${type}» пока не поддерживается. В v1 поддерживается flowchart/graph.`,
+          message: `Тип диаграммы «${type}» пока не поддерживается. Поддерживаются flowchart/graph и timeline.`,
         },
       }
     }
 
-    const db = diagram?.db
     if (!db || typeof db.getVertices !== 'function' || typeof db.getDirection !== 'function') {
       return {
         ok: false,

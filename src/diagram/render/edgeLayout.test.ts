@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { buildEdgeGeometries } from './edgeLayout'
 import { fallbackMeasurer as measurer } from '../measure/textMetrics'
-import type { DiagramIR } from '../ir'
+import type { FlowchartIR } from '../ir'
 import type { Layout } from '../layout/layoutElk'
 import { font, type as typography } from '../theme'
 
 const FONT = { family: font.family, weight: 400, size: typography.node.size }
 
-function ir(edges: DiagramIR['edges']): DiagramIR {
-  return { v: 1, direction: 'TB', nodes: [], edges, groups: [], warnings: [] }
+function ir(edges: FlowchartIR['edges']): FlowchartIR {
+  return { v: 1, type: 'flowchart', direction: 'TB', nodes: [], edges, groups: [], warnings: [] }
 }
 
 function layout(nodes: Layout['nodes'], edges: Layout['edges']): Layout {

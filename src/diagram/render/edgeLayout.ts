@@ -1,4 +1,4 @@
-import type { DiagramIR } from '../ir'
+import type { FlowchartIR, InlineRun } from '../ir'
 import type { Layout, Point } from '../layout/layoutElk'
 import type { FontSpec, TextMeasurer } from '../measure/textMetrics'
 import { type as typography } from '../theme'
@@ -42,7 +42,7 @@ const overlaps = (a: Rect, b: Rect, pad = 0): boolean =>
 const PARALLEL_GAP = 12
 
 export function buildEdgeGeometries(
-  ir: DiagramIR,
+  ir: FlowchartIR,
   layout: Layout,
   font: FontSpec,
   measurer: TextMeasurer,
@@ -94,7 +94,7 @@ export function buildEdgeGeometries(
 
     const label = edge.label?.lines.length
       ? placeLabel(
-          edge.label.lines.map((line) => line.map((r) => r.text).join('')).join(' '),
+          edge.label.lines.map((line: InlineRun[]) => line.map((r: InlineRun) => r.text).join('')).join(' '),
           points,
           nodeRects,
           placedLabels,

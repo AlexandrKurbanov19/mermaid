@@ -1,5 +1,5 @@
-import type { NodeRole, TextBlock, DiagramIR } from '../ir'
-import { size, textArea, type as typography } from '../theme'
+import type { NodeRole, TextBlock, FlowchartIR } from '../ir'
+import { badge, size, textArea, type as typography } from '../theme'
 import { fitText, type FitResult } from './fitText'
 import type { FontSpec, TextMeasurer } from './textMetrics'
 
@@ -24,6 +24,8 @@ export interface MeasureOptions {
   maxWidth?: number
   minHeight?: number
   maxHeight?: number
+  /** у узла есть бейдж-кружок слева — часть ширины отдаём ему */
+  badge?: boolean
 }
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v))
@@ -41,6 +43,7 @@ export function measureNode(
   const maxH = opts.maxHeight ?? size.nodeMaxHeight
 
   const factor = textArea[role]
+  const badgeReserve = opts.badge ? badge.reserve : 0
   const padX = size.paddingX
   const padY = size.paddingY
 
@@ -54,12 +57,12 @@ export function measureNode(
   if (factor.width === 1 && factor.height === 1) {
     const fit = fitText(
       label,
-      { ...base, maxWidth: maxW - padX * 2, maxHeight: maxH - padY * 2 },
+      { ...base, maxWidth: maxW - padX * 2 - badgeReserve, maxHeight: maxH - padY * 2 },
       font,
       measurer,
     )
     return {
-      width: clamp(Math.ceil(fit.width) + padX * 2, minW, maxW),
+      width: clamp(Math.ceil(fit.width) + padX * 2 + badgeReserve, minW, maxW),
       height: clamp(Math.ceil(fit.height) + padY * 2, minH, maxH),
       fit,
     }
@@ -108,13 +111,13 @@ export function measureNode(
 
 /** Габариты всех узлов схемы: id -> бокс. */
 export function measureNodes(
-  ir: DiagramIR,
+  ir: FlowchartIR,
   font: FontSpec,
   measurer: TextMeasurer,
 ): Record<string, NodeBox> {
   const result: Record<string, NodeBox> = {}
   for (const node of ir.nodes) {
-    result[node.id] = measureNode(node.label, node.role, font, measurer)
+    result[node.id] = measureNode(node.label, node.role, font, measurer, { badge: !!node.badge })
   }
   return result
 }

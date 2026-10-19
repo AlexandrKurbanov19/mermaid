@@ -1,11 +1,11 @@
 import { useId, useMemo } from 'react'
-import type { DiagramIR, InlineRun, IRNode } from '../ir'
+import type { FlowchartIR, InlineRun, IRNode } from '../ir'
 import type { NodeBox } from '../measure/measureNode'
 import type { Layout } from '../layout/layoutElk'
 import { buildOrthogonalPath } from '../layout/layoutElk'
 import { buildEdgeGeometries } from './edgeLayout'
 import { measurer } from '../measure/textMetrics'
-import { color, font, size, type as typography } from '../theme'
+import { badge as badgeTheme, color, font, size, type as typography } from '../theme'
 
 /**
  * Шаг [4] пайплайна: IR + координаты -> SVG.
@@ -15,7 +15,7 @@ import { color, font, size, type as typography } from '../theme'
  */
 
 interface Props {
-  ir: DiagramIR
+  ir: FlowchartIR
   boxes: Record<string, NodeBox>
   layout: Layout
   /** для экспорта: ref на корневой <svg> */
@@ -27,6 +27,8 @@ const SHAPE_STYLE: Record<IRNode['role'], { fill: string; stroke: string; text: 
   round: { fill: color.nodeFill, stroke: color.borderSubtle, text: color.textPrimary },
   pill: { fill: color.nodeFill, stroke: color.borderSubtle, text: color.textPrimary },
   hexagon: { fill: color.nodeFill, stroke: color.borderSubtle, text: color.textPrimary },
+  chevron: { fill: color.nodeFill, stroke: color.borderSubtle, text: color.textPrimary },
+  secondary: { fill: color.nodeSecondaryFill, stroke: color.borderSubtle, text: color.textPrimary },
   decision: { fill: color.nodeFill, stroke: 'none', text: color.textPrimary },
   circle: { fill: color.nodeFill, stroke: color.borderSubtle, text: color.textPrimary },
   accent: { fill: color.nodeAccentFill, stroke: 'none', text: color.textOnAccent },
@@ -54,7 +56,9 @@ export function DiagramSvg({ ir, boxes, layout, svgRef }: Props) {
       viewBox={`0 0 ${Math.max(layout.width, 1)} ${Math.max(layout.height, 1)}`}
       width={layout.width}
       height={layout.height}
-      style={{ display: 'block', maxWidth: '100%', height: 'auto', fontFamily: font.family }}
+      // размеры НЕ подгоняем через CSS: подгонкой занимается ZoomPane,
+      // иначе SVG сжимается до применения transform и зум считается по искажённым размерам
+      style={{ display: 'block', overflow: 'visible', fontFamily: font.family }}
       role="img"
       aria-label="Схема"
     >
@@ -211,7 +215,8 @@ function NodeShape({
   return (
     <g>
       {shapeElement(node.role, x, y, box.width, box.height, fill, style.stroke, style.dashed)}
-      <NodeText box={box} x={x} y={y} fill={style.text} />
+      {node.badge && <NodeBadge badge={node.badge} role={node.role} x={x} y={y} height={box.height} />}
+      <NodeText box={box} x={x} y={y} fill={style.text} hasBadge={!!node.badge} />
     </g>
   )
 }
@@ -244,6 +249,17 @@ function shapeElement(
       const cy = y + h / 2
       return <polygon points={`${cx},${y} ${x + w},${cy} ${cx},${y + h} ${x},${cy}`} fill={fill} {...strokeProps} />
     }
+    case 'chevron': {
+      const notch = Math.min(24, w / 4)
+      const cy = y + h / 2
+      return (
+        <polygon
+          points={`${x},${y} ${x + w - notch},${y} ${x + w},${cy} ${x + w - notch},${y + h} ${x},${y + h} ${x + notch},${cy}`}
+          fill={fill}
+          {...strokeProps}
+        />
+      )
+    }
     case 'hexagon': {
       const inset = Math.min(w * 0.15, h / 2)
       const cy = y + h / 2
@@ -260,13 +276,63 @@ function shapeElement(
   }
 }
 
+/** Кружок с номером/буквой слева внутри узла (архив: «1. Понять проблему»). */
+function NodeBadge({
+  badge,
+  role,
+  x,
+  y,
+  height,
+}: {
+  badge: string
+  role: IRNode['role']
+  x: number
+  y: number
+  height: number
+}) {
+  const size = badgeTheme.size
+  const cx = x + 12 + size / 2
+  const cy = y + height / 2
+  const stroke = role === 'secondary' ? color.brandBlue : color.brandNeo
+
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={size / 2} fill={color.canvas} stroke={stroke} strokeWidth={badgeTheme.strokeWidth} />
+      <text
+        x={cx}
+        y={cy}
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontSize={badgeTheme.fontSize}
+        fontWeight={font.weight.semibold}
+        fill={stroke === color.brandBlue ? color.brandBlue : color.brandNeoInk}
+      >
+        {badge}
+      </text>
+    </g>
+  )
+}
+
 /** Текст узла: строки из fit-text, центрированные; начертания — из прогонов. */
-function NodeText({ box, x, y, fill }: { box: NodeBox; x: number; y: number; fill: string }) {
+function NodeText({
+  box,
+  x,
+  y,
+  fill,
+  hasBadge,
+}: {
+  box: NodeBox
+  x: number
+  y: number
+  fill: string
+  hasBadge?: boolean
+}) {
   const { lines, fontSize, lineHeight } = box.fit
   if (!lines.length) return null
 
   const totalHeight = lines.length * lineHeight
-  const centerX = x + box.width / 2
+  const reserve = hasBadge ? badgeTheme.reserve : 0
+  const centerX = x + reserve + (box.width - reserve) / 2
   const firstLineCenterY = y + (box.height - totalHeight) / 2 + lineHeight / 2
 
   return (

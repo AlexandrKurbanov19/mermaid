@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { EXAMPLES, DEFAULT_EXAMPLE } from './examples'
 import { parseMermaid, type ParseError } from './diagram/parse/parseMermaid'
 import type { DiagramIR } from './diagram/ir'
 import { measurer } from './diagram/measure/textMetrics'
 import { measureNodes, type NodeBox } from './diagram/measure/measureNode'
 import { layoutDiagram, type Layout } from './diagram/layout/layoutElk'
+import { layoutTimeline } from './diagram/layout/layoutTimeline'
 import { DiagramSvg } from './diagram/render/DiagramSvg'
+import { TimelineSvg } from './diagram/render/TimelineSvg'
 import { ZoomPane } from './diagram/render/ZoomPane'
 import { toSvgString, downloadSvg, downloadBlob } from './diagram/export/toSvgString'
 import { svgToPngBlob } from './diagram/export/toPng'
 import { font, type as typography } from './diagram/theme'
-
-import { EXAMPLES, DEFAULT_EXAMPLE } from './examples'
 
 const DEFAULT_SOURCE = DEFAULT_EXAMPLE.source
 
@@ -41,13 +42,19 @@ export function App() {
   const [source, setSource] = useState(DEFAULT_SOURCE)
   const [exampleId, setExampleId] = useState(DEFAULT_EXAMPLE.id)
   const debounced = useDebounced(source)
+
   const [parse, setParse] = useState<ParseState>({ status: 'idle' })
   const [layout, setLayout] = useState<Layout | null>(null)
   const [busy, setBusy] = useState<null | 'png' | 'svg'>(null)
+  const [exportError, setExportError] = useState<string | null>(null)
   const [scale, setScale] = useState(2)
   const [transparent, setTransparent] = useState(false)
-  const [exportError, setExportError] = useState<string | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
+
+  const fontSpec = useMemo(
+    () => ({ family: font.family, weight: font.weight.regular, size: typography.node.size }),
+    [],
+  )
 
   // [1-2] mermaid -> IR
   useEffect(() => {
@@ -61,34 +68,63 @@ export function App() {
     }
   }, [debounced])
 
+  const flowchartIr = parse.status === 'ok' && parse.ir.type === 'flowchart' ? parse.ir : null
+  const timelineIr = parse.status === 'ok' && parse.ir.type === 'timeline' ? parse.ir : null
+
   // [3] габариты узлов (fit-text) — синхронно из IR
-  const boxes: Record<string, NodeBox> | null = useMemo(() => {
-    if (parse.status !== 'ok') return null
-    return measureNodes(parse.ir, { family: font.family, weight: font.weight.regular, size: typography.node.size }, measurer)
-  }, [parse])
+  const boxes: Record<string, NodeBox> | null = useMemo(
+    () => (flowchartIr ? measureNodes(flowchartIr, fontSpec, measurer) : null),
+    [flowchartIr, fontSpec],
+  )
 
   // [4] раскладка — асинхронно (ELK)
   useEffect(() => {
-    if (parse.status !== 'ok' || !boxes) {
+    if (!flowchartIr || !boxes) {
       setLayout(null)
       return
     }
     let cancelled = false
-    layoutDiagram(parse.ir, boxes).then((result) => {
+    layoutDiagram(flowchartIr, boxes).then((result) => {
       if (!cancelled) setLayout(result)
     })
     return () => {
       cancelled = true
     }
-  }, [parse, boxes])
+  }, [flowchartIr, boxes])
+
+  // таймлайн раскладывается синхронно (свой алгоритм, без ELK)
+  const timelineLayout = useMemo(
+    () => (timelineIr ? layoutTimeline(timelineIr, fontSpec, measurer) : null),
+    [timelineIr, fontSpec],
+  )
+
+  const ready = !!svgRef.current && parse.status === 'ok' && (!!layout || !!timelineLayout)
 
   const stats = useMemo(() => {
-    if (parse.status !== 'ok' || !boxes) return null
-    const shrunk = parse.ir.nodes.filter((n) => (boxes[n.id]?.fit.fontSize ?? 0) < typography.node.size).length
-    return { nodes: parse.ir.nodes.length, edges: parse.ir.edges.length, shrunk }
-  }, [parse, boxes])
-
-  const ready = parse.status === 'ok' && !!boxes && !!layout
+    if (flowchartIr && boxes) {
+      const shrunk = flowchartIr.nodes.filter((n) => (boxes[n.id]?.fit.fontSize ?? 0) < typography.node.size).length
+      return {
+        text: `${plural(flowchartIr.nodes.length, 'узел', 'узла', 'узлов')} · ${plural(
+          flowchartIr.edges.length,
+          'связь',
+          'связи',
+          'связей',
+        )}${shrunk ? ` · ${shrunk} с уменьшенным шрифтом` : ''}`,
+      }
+    }
+    if (timelineIr) {
+      const events = timelineIr.points.reduce((sum, p) => sum + p.events.length, 0)
+      return {
+        text: `${plural(timelineIr.points.length, 'точка', 'точки', 'точек')} · ${plural(
+          events,
+          'событие',
+          'события',
+          'событий',
+        )}`,
+      }
+    }
+    return null
+  }, [flowchartIr, timelineIr, boxes])
 
   const handleSvg = async () => {
     if (!svgRef.current) return
@@ -117,6 +153,19 @@ export function App() {
       setBusy(null)
     }
   }
+
+  const diagram =
+    flowchartIr && boxes && layout ? (
+      <DiagramSvg ir={flowchartIr} boxes={boxes} layout={layout} svgRef={svgRef} />
+    ) : timelineIr && timelineLayout ? (
+      <TimelineSvg ir={timelineIr} layout={timelineLayout} svgRef={svgRef} />
+    ) : null
+
+  const zoomSize = layout
+    ? { width: layout.width, height: layout.height }
+    : timelineLayout
+      ? { width: timelineLayout.width, height: timelineLayout.height }
+      : null
 
   return (
     <div className="app">
@@ -147,9 +196,7 @@ export function App() {
               </option>
             ))}
           </select>
-          <span style={{ fontSize: 12, color: '#808080' }}>
-            {EXAMPLES.find((x) => x.id === exampleId)?.checks}
-          </span>
+          <span style={{ fontSize: 12, color: '#808080' }}>{EXAMPLES.find((x) => x.id === exampleId)?.checks}</span>
         </div>
         <textarea
           className="editor"
@@ -162,12 +209,7 @@ export function App() {
       <section className="pane pane--preview">
         <div className="pane__head">
           <h1 className="pane__title">Предпросмотр</h1>
-          {stats && (
-            <span style={{ color: '#808080', fontSize: 13 }}>
-              {plural(stats.nodes, 'узел', 'узла', 'узлов')} · {plural(stats.edges, 'связь', 'связи', 'связей')}
-              {stats.shrunk ? ` · ${stats.shrunk} с уменьшенным шрифтом` : ''}
-            </span>
-          )}
+          {stats && <span style={{ color: '#808080', fontSize: 13 }}>{stats.text}</span>}
         </div>
 
         <div className="preview-box">
@@ -184,18 +226,36 @@ export function App() {
           {parse.status === 'idle' && <div style={{ color: '#808080' }}>Разбираю…</div>}
 
           {parse.status === 'ok' && (
-            <div style={{ display: 'grid', gap: 12, flex: 1, minHeight: 0, gridTemplateRows: parse.ir.warnings.length ? 'auto 1fr' : '1fr' }}>
+            <div
+              style={{
+                display: 'grid',
+                gap: 12,
+                flex: 1,
+                minHeight: 0,
+                gridTemplateRows: parse.ir.warnings.length ? 'auto 1fr' : '1fr',
+              }}
+            >
               {parse.ir.warnings.map((w) => (
                 <div
                   key={w}
-                  style={{ background: '#FFF7E6', border: '1px solid #F3D9A4', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}
+                  style={{
+                    background: '#FFF7E6',
+                    border: '1px solid #F3D9A4',
+                    borderRadius: 8,
+                    padding: '8px 10px',
+                    fontSize: 13,
+                  }}
                 >
                   {w}
                 </div>
               ))}
-              {boxes && layout ? (
-                <ZoomPane width={layout.width} height={layout.height}>
-                  <DiagramSvg ir={parse.ir} boxes={boxes} layout={layout} svgRef={svgRef} />
+              {diagram && zoomSize ? (
+                <ZoomPane
+                  width={zoomSize.width}
+                  height={zoomSize.height}
+                  contentKey={`${parse.ir.type}-${zoomSize.width}x${zoomSize.height}`}
+                >
+                  {diagram}
                 </ZoomPane>
               ) : (
                 <div style={{ color: '#808080' }}>Считаю раскладку…</div>
@@ -205,10 +265,20 @@ export function App() {
         </div>
 
         <div className="toolbar">
-          <button type="button" style={btnStyle(!ready || busy !== null)} disabled={!ready || busy !== null} onClick={handlePng}>
+          <button
+            type="button"
+            style={btnStyle(!ready || busy !== null)}
+            disabled={!ready || busy !== null}
+            onClick={handlePng}
+          >
             {busy === 'png' ? 'Готовлю PNG…' : 'Скачать PNG'}
           </button>
-          <button type="button" style={btnStyle(!ready || busy !== null)} disabled={!ready || busy !== null} onClick={handleSvg}>
+          <button
+            type="button"
+            style={btnStyle(!ready || busy !== null)}
+            disabled={!ready || busy !== null}
+            onClick={handleSvg}
+          >
             {busy === 'svg' ? 'Готовлю SVG…' : 'Скачать SVG'}
           </button>
           <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 13, color: '#808080' }}>
@@ -227,10 +297,10 @@ export function App() {
             <input type="checkbox" checked={transparent} onChange={(e) => setTransparent(e.target.checked)} />
             прозрачный фон
           </label>
+          {exportError && <span style={{ color: '#B93A33', fontSize: 12 }}>{exportError}</span>}
           <span style={{ color: '#808080', fontSize: 12, flexBasis: '100%' }}>
             колесо — зум, перетаскивание — панорама, двойной клик — вписать
           </span>
-          {exportError && <span style={{ color: '#B93A33', fontSize: 12 }}>{exportError}</span>}
         </div>
       </section>
     </div>

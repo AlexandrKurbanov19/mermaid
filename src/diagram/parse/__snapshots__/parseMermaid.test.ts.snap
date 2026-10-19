@@ -106,6 +106,7 @@ exports[`пример из задачи > IR детерминирован (сн�
       "role": "box",
     },
   ],
+  "type": "flowchart",
   "v": 1,
   "warnings": [],
 }
