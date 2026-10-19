@@ -21,7 +21,7 @@ const nodes = {
 }
 
 describe('buildEdgeGeometries', () => {
-  it('одно ребро не сдвигается', () => {
+  it('одно ребро не сдвигается, но получает зазор от блока', () => {
     const geometries = buildEdgeGeometries(
       ir([{ id: 'e1', from: 'A', to: 'B', kind: 'solid', arrow: 'end' }]),
       layout(nodes, [
@@ -36,9 +36,10 @@ describe('buildEdgeGeometries', () => {
       FONT,
       measurer,
     )
+    // линия укорачивается на 6px с каждого конца, чтобы не «упираться» в блок
     expect(geometries[0].points).toEqual([
-      { x: 160, y: 96 },
-      { x: 160, y: 200 },
+      { x: 160, y: 102 },
+      { x: 160, y: 194 },
     ])
   })
 

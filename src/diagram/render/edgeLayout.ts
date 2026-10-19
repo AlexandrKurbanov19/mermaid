@@ -41,6 +41,33 @@ const overlaps = (a: Rect, b: Rect, pad = 0): boolean =>
 /** Сколько сдвигать параллельные рёбра между одной парой узлов. */
 const PARALLEL_GAP = 12
 
+/** Зазор между концом линии и границей блока: линия не должна «упираться». */
+const EDGE_GAP = 6
+
+/** Укорачивает линию с обоих концов на EDGE_GAP (вдоль направления сегмента). */
+function trimEndpoints(points: Point[], gap: number): Point[] {
+  if (points.length < 2) return points
+  const result = points.slice()
+
+  const first = result[0]
+  const second = result[1]
+  const len0 = Math.hypot(second.x - first.x, second.y - first.y)
+  if (len0 > gap * 2) {
+    const t = gap / len0
+    result[0] = { x: first.x + (second.x - first.x) * t, y: first.y + (second.y - first.y) * t }
+  }
+
+  const beforeLast = result[result.length - 2]
+  const last = result[result.length - 1]
+  const len1 = Math.hypot(last.x - beforeLast.x, last.y - beforeLast.y)
+  if (len1 > gap * 2) {
+    const t = gap / len1
+    result[result.length - 1] = { x: last.x - (last.x - beforeLast.x) * t, y: last.y - (last.y - beforeLast.y) * t }
+  }
+
+  return result
+}
+
 export function buildEdgeGeometries(
   ir: FlowchartIR,
   layout: Layout,
@@ -90,6 +117,11 @@ export function buildEdgeGeometries(
       points = points.map((p) =>
         horizontal ? { x: p.x, y: p.y + shift } : { x: p.x + shift, y: p.y },
       )
+    }
+
+    // зазор перед блоком: петлю на себя не трогаем (там геометрия особая)
+    if (edge.from !== edge.to) {
+      points = trimEndpoints(points, EDGE_GAP)
     }
 
     const label = edge.label?.lines.length

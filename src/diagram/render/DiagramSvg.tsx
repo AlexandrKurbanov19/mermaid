@@ -31,6 +31,9 @@ const SHAPE_STYLE: Record<IRNode['role'], { fill: string; stroke: string; text: 
   cylinder: { fill: color.nodeFill, stroke: color.borderSubtle, text: color.textPrimary },
   subroutine: { fill: color.nodeFill, stroke: color.borderSubtle, text: color.textPrimary },
   parallelogram: { fill: color.nodeFill, stroke: color.borderSubtle, text: color.textPrimary },
+  doublecircle: { fill: color.nodeFill, stroke: color.borderSubtle, text: color.textPrimary },
+  trapezoid: { fill: color.nodeFill, stroke: color.borderSubtle, text: color.textPrimary },
+  inv_trapezoid: { fill: color.nodeFill, stroke: color.borderSubtle, text: color.textPrimary },
   secondary: { fill: color.nodeSecondaryFill, stroke: color.borderSubtle, text: color.textPrimary },
   outline: { fill: color.canvas, stroke: color.brandNeo, text: color.textPrimary },
   decision: { fill: color.nodeFill, stroke: 'none', text: color.textPrimary },
@@ -292,6 +295,39 @@ function shapeElement(
           <rect x={x} y={y} width={w} height={h} rx={size.radius} fill={fill} stroke={stroke} strokeWidth={size.strokeWidth} />
           <rect x={x + 4} y={y + 4} width={w - 8} height={h - 8} rx={size.radius - 4} fill="none" stroke={stroke} strokeWidth={size.strokeWidth} />
         </g>
+      )
+    }
+    case 'doublecircle': {
+      const r = Math.min(w, h) / 2
+      const cx = x + w / 2
+      const cy = y + h / 2
+      return (
+        <g>
+          <circle cx={cx} cy={cy} r={r} fill={fill} stroke={stroke} strokeWidth={size.strokeWidth} />
+          <circle cx={cx} cy={cy} r={r - 5} fill="none" stroke={stroke} strokeWidth={size.strokeWidth} />
+        </g>
+      )
+    }
+    case 'trapezoid': {
+      const skew = Math.min(20, w / 4)
+      return (
+        <polygon
+          points={`${x + skew},${y} ${x + w - skew},${y} ${x + w},${y + h} ${x},${y + h}`}
+          fill={fill}
+          stroke={stroke}
+          strokeWidth={size.strokeWidth}
+        />
+      )
+    }
+    case 'inv_trapezoid': {
+      const skew = Math.min(20, w / 4)
+      return (
+        <polygon
+          points={`${x},${y} ${x + w},${y} ${x + w - skew},${y + h} ${x + skew},${y + h}`}
+          fill={fill}
+          stroke={stroke}
+          strokeWidth={size.strokeWidth}
+        />
       )
     }
     case 'parallelogram': {

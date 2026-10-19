@@ -90,10 +90,13 @@ describe('формы', () => {
     expect(nodes[0].role).toBe(role)
   })
 
-  it('трапеция остаётся экзотикой и сводится к box с предупреждением', async () => {
-    const result = await ir('flowchart TD\n A[/трапеция\\] --> B')
-    expect(result.nodes.find((n) => n.id === 'A')!.role).toBe('box')
-    expect(result.warnings.join(' ')).toContain('A (trapezoid)')
+  it('трапеция и двойной круг — свои роли', async () => {
+    const trapezoid = await ir('flowchart TD\n A[/трапеция\\] --> B')
+    const doublecircle = await ir('flowchart TD\n A(((круг))) --> B')
+    expect(trapezoid.nodes.find((n) => n.id === 'A')!.role).toBe('trapezoid')
+    expect(doublecircle.nodes.find((n) => n.id === 'A')!.role).toBe('doublecircle')
+    // экзотики больше нет — предупреждений о замене формы быть не должно
+    expect(trapezoid.warnings.join(' ')).not.toContain('заменена')
   })
 })
 

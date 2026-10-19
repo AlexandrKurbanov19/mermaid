@@ -197,7 +197,7 @@ export function App() {
           spellCheck={false}
         />
         <span style={{ fontSize: 12, color: '#808080' }}>
-          Поддерживается только flowchart (блок-схемы): TD/TB, LR, BT, RL. graph — легаси-синоним. Не помнишь синтаксис — кнопка «Синтаксис ?».
+          Поддерживается только flowchart (блок-схемы): TD/TB, LR, BT, RL. Не помнишь синтаксис — кнопка «Синтаксис ?».
         </span>
 
         {helpOpen && (

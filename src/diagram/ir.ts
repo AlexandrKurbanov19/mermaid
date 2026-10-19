@@ -31,6 +31,9 @@ export type NodeRole =
   | 'cylinder' // A[(текст)] — база данных
   | 'subroutine' // A[[текст]] — процедура/функция
   | 'parallelogram' // A[/текст/] и A[\текст\] — ввод/вывод
+  | 'doublecircle' // A(((текст))) — двойной круг
+  | 'trapezoid' // A[/текст\] — трапеция (верх уже)
+  | 'inv_trapezoid' // A[\текст/] — перевёрнутая трапеция (низ уже)
   | 'decision' // A{текст} — ромб
   | 'accent' // A:::accent — брендовая заливка (градиент)
   | 'secondary' // A:::secondary — вторичный (синий) акцент

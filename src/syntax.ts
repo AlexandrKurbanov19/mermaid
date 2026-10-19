@@ -22,7 +22,7 @@ export interface SyntaxGroup {
 export const SYNTAX_GROUPS: SyntaxGroup[] = [
   {
     id: 'direction',
-    title: 'Направление схемы (flowchart — современный, graph — легаси-синоним)',
+    title: 'Направление схемы',
     items: [
       { id: 'td', title: 'Сверху вниз', note: 'по умолчанию, самый частый вариант', code: 'flowchart TD\n    A[Первый] --> B[Второй]' },
       { id: 'lr', title: 'Слева направо', note: 'цепочки и процессы', code: 'flowchart LR\n    A[Первый] --> B[Второй] --> C[Третий]' },
@@ -44,7 +44,8 @@ export const SYNTAX_GROUPS: SyntaxGroup[] = [
       { id: 'cylinder', title: 'Цилиндр (база данных)', note: 'хранилище, БД, таблица', code: 'flowchart LR\n    UI --> API --> DB[(Database)]' },
       { id: 'subroutine', title: 'Подпрограмма', note: 'процедура/функция — двойная рамка', code: 'flowchart TD\n    A[[Обработать данные]] --> B[Дальше]' },
       { id: 'parallelogram', title: 'Параллелограмм', note: 'ввод/вывод данных', code: 'flowchart TD\n    A[/Входные данные/] --> B[/Результат/]' },
-      { id: 'exotic', title: 'Экзотика (трапеция)', note: 'сводится к обычному блоку — с предупреждением', code: 'flowchart TD\n    A[/трапеция\\] --> B[Дальше]' },
+      { id: 'doublecircle', title: 'Двойной круг', note: 'граница процесса/системы', code: 'flowchart TD\n    A(((Процесс))) --> B[Дальше]' },
+      { id: 'trapezoid', title: 'Трапеция', note: 'ручная операция, ввод вручную', code: 'flowchart TD\n    A[/Ручная операция\\] --> B[Дальше]' },
     ],
   },
   {

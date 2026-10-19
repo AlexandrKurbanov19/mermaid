@@ -27,7 +27,7 @@ const SHAPE_TO_ROLE: Record<string, NodeRole> = {
   round: 'round',
   stadium: 'pill',
   circle: 'circle',
-  doublecircle: 'circle',
+  doublecircle: 'doublecircle',
   diamond: 'decision',
   question: 'decision',
   hexagon: 'hexagon',
@@ -38,12 +38,14 @@ const SHAPE_TO_ROLE: Record<string, NodeRole> = {
   lean_left: 'parallelogram',
   odd: 'chevron',
   // экзотика — сводим к обычному блоку
-  trapezoid: 'box',
-  inv_trapezoid: 'box',
+  trapezoid: 'trapezoid',
+  inv_trapezoid: 'inv_trapezoid',
+  // современный синтаксис @{ shape: ... }
+  rounded: 'round',
+  text: 'box',
   default: 'box',
 }
 
-const EXOTIC = new Set(['trapezoid', 'inv_trapezoid'])
 
 const DIRECTION: Record<string, Direction> = {
   TB: 'TB',
@@ -149,11 +151,9 @@ export function normalize(db: any, source: string): FlowchartIR {
   const rawGroups = toArray<any>(db.getSubGraphs?.())
 
   // --- узлы ---------------------------------------------------------------
-  const exotic: string[] = []
   const nodes: IRNode[] = vertices.map((v) => {
     const shape: string = v.type ?? v.shape ?? 'square'
     let role: NodeRole = SHAPE_TO_ROLE[shape] ?? 'box'
-    if (EXOTIC.has(shape)) exotic.push(`${v.id} (${shape})`)
 
     const classes: string[] = Array.isArray(v.classes) ? v.classes : []
     if (classes.includes(ACCENT_CLASS)) role = 'accent'
@@ -170,12 +170,6 @@ export function normalize(db: any, source: string): FlowchartIR {
       ...(badge ? { badge } : {}),
     }
   })
-
-  if (exotic.length) {
-    warnings.push(
-      `Экзотическая форма заменена на обычный блок: ${exotic.join(', ')}`,
-    )
-  }
 
   // --- группы (subgraph) --------------------------------------------------
   const nodeIds = new Set(nodes.map((n) => n.id))
