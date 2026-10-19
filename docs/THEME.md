@@ -108,9 +108,8 @@ export const color = {
 
 ```ts
 export const font = {
-  // $default-font из vars.sass лендингов: "Sans Display, Arial, sans-serif"
-  family: "'Sans Display', Arial, sans-serif",
-  familySecondary: "'Golos Text', Arial, sans-serif",  // мелкие подписи
+  // Решение заказчика: SB Sans Text везде (гарнитура DS Сбера)
+  family: "'SB Sans Text', Arial, sans-serif",
   mono: "'Roboto Mono', ui-monospace, monospace",
   weight: { regular: 400, medium: 500, semibold: 600, bold: 700 },
 }
@@ -122,12 +121,27 @@ export const type = {
 }
 ```
 
-Файлы: `apps/landings/public/next-fonts/sans_display/sans_display_{regular,medium,semibold,bold}.woff2`
-(+ `.../golos_text_*.woff2` при необходимости).
+Файлы (скачаны в `public/fonts/`, сигнатура `wOF2` проверена):
 
-`[ВОПРОС, не блокирует]` DS-кнопки используют `SB Sans Text`. Для схем берём `Sans Display` (это `$default-font`). Если нужна полная консистентность с DS — скажи, поставлю `SB Sans Text` везде.
+| Файл | Вес | Размер |
+|---|---|---|
+| `SBSansText-Regular.woff2` | 400 | 39.5 КБ |
+| `SBSansText-Medium.woff2` | 500 | 36.8 КБ |
+| `SBSansText-Semibold.woff2` | 600 | 42.7 КБ |
+| `SBSansText-Bold.woff2` | 700 | 40.2 КБ |
 
-`[НЕ ПРОВЕРЕНО]` Что в архиве именно `Sans Display` — совпадение по стилю, не доказательство. Проверяется наложением рендера на кроп слайда.
+**Источник:** CDN Сбера — тот же CSS, что подключают лендинги (`apps/landings/src/pages/_app.tsx:203`):
+`https://cdn-app.sberdevices.ru/shared-static/0.0.0/styles/SBSansText.0.2.0.css`
+→ `.../fonts/SBSansText.0.2.0/SBSansText-<Weight>.woff2`.
+
+Почему локально, а не `<link>` на CDN: файлы нужны **в байтах** — их придётся вшивать base64 в SVG при экспорте PNG (PLAN §9.2). С CDN-ссылки этого не сделать.
+
+`[РИСК: лицензия]` Гарнитура Сбера, размещённая на их CDN; лендинги Нетологии её уже используют. Хранение копии в своём репозитории стоит согласовать с владельцем бренда.
+
+`[ПРОВЕРЕНО В РАНТАЙМЕ]` `document.fonts.check('400 16px "SB Sans Text"') === true`, веса 400/600/700 → `loaded`, `body` считает `font-family: "SB Sans Text", Arial, sans-serif`.
+
+
+`[НЕ ПРОВЕРЕНО]` Совпадает ли шрифт архива с SB Sans Text — не доказано: проверяется наложением рендера на кроп слайда.
 
 ---
 
@@ -193,7 +207,7 @@ export const size = {
 
 | Что | Как закрыть |
 |---|---|
-| Шрифт архива = `Sans Display`? | наложить рендер на кроп слайда |
+| Шрифт архива = SB Sans Text? | наложить рендер на кроп слайда |
 | base64-шрифт в SVG → PNG в Safari | спайк №0 (PLAN §9) |
-| `canvas.measureText` vs SVG-рендер для `Sans Display` | юнит-тест с допуском ±2 % |
-| Нужен ли `SB Sans Text` вместо `Sans Display` для консистентности с DS | вопрос выше |
+| `canvas.measureText` vs SVG-рендер для SB Sans Text | юнит-тест с допуском ±2 % |
+

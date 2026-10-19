@@ -1,0 +1,36 @@
+/*
+  SB Sans Text — гарнитура из DS Сбера (её использует @salutejs/sdds-netology).
+  Источник файлов: CDN Сбера, тот же, что используют лендинги
+  (apps/landings/src/pages/_app.tsx -> SBSansText.0.2.0.css).
+  Файлы лежат локально в public/fonts/, чтобы их можно было:
+   - грузить без внешней сети;
+   - вшивать base64 в SVG при экспорте PNG.
+*/
+@font-face {
+  font-family: 'SB Sans Text';
+  src: url('/fonts/SBSansText-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SB Sans Text';
+  src: url('/fonts/SBSansText-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SB Sans Text';
+  src: url('/fonts/SBSansText-Semibold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SB Sans Text';
+  src: url('/fonts/SBSansText-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
