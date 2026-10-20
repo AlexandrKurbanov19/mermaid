@@ -13,7 +13,7 @@
 
 export const IR_VERSION = 1 as const
 
-export type DiagramType = 'flowchart' | 'timeline' | 'state' | 'sequence' | 'class'
+export type DiagramType = 'flowchart' | 'timeline' | 'state' | 'sequence' | 'class' | 'er'
 
 export type Direction = 'TB' | 'BT' | 'LR' | 'RL'
 
@@ -218,10 +218,40 @@ export interface ClassIR extends BaseIR {
   relations: ClassRelation[]
 }
 
-export type DiagramIR = FlowchartIR | TimelineIR | StateIR | SequenceIR | ClassIR
+export interface EntityAttribute {
+  type: string
+  name: string
+  keys: string[]
+}
+
+export interface EntityNode {
+  id: string
+  name: string
+  attributes: EntityAttribute[]
+}
+
+export interface Relationship {
+  id: string
+  from: string
+  to: string
+  roleA?: string
+  /** кардинальность, как отдал mermaid: ZERO_OR_MORE, ONLY_ONE, ONE_OR_MORE, ZERO_OR_ONE */
+  cardA?: string
+  cardB?: string
+  identifying: boolean
+}
+
+export interface ERIR extends BaseIR {
+  type: 'er'
+  entities: EntityNode[]
+  relationships: Relationship[]
+}
+
+export type DiagramIR = FlowchartIR | TimelineIR | StateIR | SequenceIR | ClassIR | ERIR
 
 export const isFlowchart = (ir: DiagramIR): ir is FlowchartIR => ir.type === 'flowchart'
 export const isTimeline = (ir: DiagramIR): ir is TimelineIR => ir.type === 'timeline'
 export const isState = (ir: DiagramIR): ir is StateIR => ir.type === 'state'
 export const isSequence = (ir: DiagramIR): ir is SequenceIR => ir.type === 'sequence'
 export const isClass = (ir: DiagramIR): ir is ClassIR => ir.type === 'class'
+export const isEr = (ir: DiagramIR): ir is ERIR => ir.type === 'er'

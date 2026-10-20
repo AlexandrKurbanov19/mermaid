@@ -14,6 +14,9 @@ import { layoutSequence } from './diagram/layout/layoutSequence'
 import { ClassSvg } from './diagram/render/ClassSvg'
 import { measureClassNodes, type ClassDetails } from './diagram/measure/measureClass'
 import { classToFlowchart } from './diagram/layout/classAdapter'
+import { ErSvg } from './diagram/render/ErSvg'
+import { measureErNodes, type EntityDetails } from './diagram/measure/measureEr'
+import { erToFlowchart } from './diagram/layout/erAdapter'
 import { ZoomPane } from './diagram/render/ZoomPane'
 import { SyntaxHelp } from './components/SyntaxHelp'
 import { toSvgString, downloadSvg, downloadBlob } from './diagram/export/toSvgString'
@@ -80,6 +83,7 @@ export function App() {
   const stateIr = parse.status === 'ok' && parse.ir.type === 'state' ? parse.ir : null
   const sequenceIr = parse.status === 'ok' && parse.ir.type === 'sequence' ? parse.ir : null
   const classIr = parse.status === 'ok' && parse.ir.type === 'class' ? parse.ir : null
+  const erIr = parse.status === 'ok' && parse.ir.type === 'er' ? parse.ir : null
 
   // [3] габариты узлов (fit-text) — синхронно из IR
   const boxes: Record<string, NodeBox> | null = useMemo(
@@ -110,6 +114,26 @@ export function App() {
       cancelled = true
     }
   }, [classIr, classMeasure])
+
+  const erMeasure = useMemo(
+    () => (erIr ? measureErNodes(erIr, fontSpec, measurer) : null),
+    [erIr, fontSpec],
+  )
+
+  const [erLayout, setErLayout] = useState<Layout | null>(null)
+  useEffect(() => {
+    if (!erIr || !erMeasure) {
+      setErLayout(null)
+      return
+    }
+    let cancelled = false
+    layoutDiagram(erToFlowchart(erIr), erMeasure.boxes).then((result) => {
+      if (!cancelled) setErLayout(result)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [erIr, erMeasure])
 
   const stateBoxes: Record<string, NodeBox> | null = useMemo(
     () => (stateIr ? measureStateNodes(stateIr, fontSpec, measurer) : null),
@@ -149,6 +173,12 @@ export function App() {
 
 
   const stats = useMemo(() => {
+    if (erIr) {
+      const rels = erIr.relationships.length
+      return {
+        text: `${plural(erIr.entities.length, 'сущность', 'сущности', 'сущностей')} · ${plural(rels, 'связь', 'связи', 'связей')}`,
+      }
+    }
     if (classIr) {
       const rels = classIr.relations.length
       return {
@@ -226,6 +256,8 @@ export function App() {
     <SequenceSvg ir={sequenceIr} layout={sequenceLayout} svgRef={svgRef} />
   ) : classIr && classMeasure && classLayout ? (
     <ClassSvg ir={classIr} boxes={classMeasure.boxes} details={classMeasure.details} layout={classLayout} svgRef={svgRef} />
+  ) : erIr && erMeasure && erLayout ? (
+    <ErSvg ir={erIr} boxes={erMeasure.boxes} details={erMeasure.details} layout={erLayout} svgRef={svgRef} />
   ) : null
 
   const zoomSize = layout
@@ -236,7 +268,9 @@ export function App() {
         ? { width: sequenceLayout.width, height: sequenceLayout.height }
         : classLayout
           ? { width: classLayout.width, height: classLayout.height }
-          : null
+          : erLayout
+            ? { width: erLayout.width, height: erLayout.height }
+            : null
 
   // НЕ использовать svgRef в рендере: реф не триггерит перерисовку, и после первого
   // рендера кнопки оставались задизейбленными до следующего взаимодействия.

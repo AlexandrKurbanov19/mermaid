@@ -304,8 +304,23 @@ export const EXAMPLES: Example[] = [
     Dog ..> Owner : использует`,
   },
   {
+    id: 'er',
+    title: '31. ER-диаграмма',
+    checks: 'erDiagram: сущности, атрибуты, связи с кардинальностью',
+    source: `erDiagram
+    CUSTOMER ||--o{ ORDER : places
+    CUSTOMER {
+      int id PK
+      string name
+    }
+    ORDER {
+      int id PK
+      int customer_id FK
+    }`,
+  },
+  {
     id: 'error-syntax',
-    title: '31. ОШИБКА: битый синтаксис',
+    title: '32. ОШИБКА: битый синтаксис',
     checks: 'плашка ошибки, превью не падает',
     source: `flowchart TD
     A[Старт] -->
@@ -313,7 +328,7 @@ export const EXAMPLES: Example[] = [
   },
   {
     id: 'error-type',
-    title: '32. ОШИБКА: другой тип диаграммы',
+    title: '33. ОШИБКА: другой тип диаграммы',
     checks: 'sequenceDiagram в v1 не поддерживается',
     source: `sequenceDiagram
     A->>B: привет`,

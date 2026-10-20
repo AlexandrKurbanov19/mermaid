@@ -129,6 +129,18 @@ export const SYNTAX_GROUPS: SyntaxGroup[] = [
       },
     ],
   },
+  {
+    id: 'er',
+    title: 'ER-диаграмма',
+    items: [
+      {
+        id: 'er-basic',
+        title: 'Сущности и связи',
+        note: '||--o{ кардинальность; PK/FK помечают ключи',
+        code: 'erDiagram\n    CUSTOMER ||--o{ ORDER : places\n    CUSTOMER {\n      int id PK\n      string name\n    }\n    ORDER {\n      int id PK\n    }',
+      },
+    ],
+  },
 ]
 
 export const SYNTAX_TOTAL = SYNTAX_GROUPS.reduce((sum, group) => sum + group.items.length, 0)
