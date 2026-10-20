@@ -73,16 +73,22 @@ export function SequenceSvg({ ir, layout, svgRef }: Props) {
               {f.text ? ` ${f.text}` : ''}
             </text>
             {f.elseLines.map((e, j) => (
-              <line
-                key={j}
-                x1={frameX1}
-                y1={e.y}
-                x2={frameX2}
-                y2={e.y}
-                stroke={color.groupStrokeNeutral}
-                strokeWidth={1}
-                strokeDasharray="6 4"
-              />
+              <g key={j}>
+                <line
+                  x1={frameX1}
+                  y1={e.y}
+                  x2={frameX2}
+                  y2={e.y}
+                  stroke={color.groupStrokeNeutral}
+                  strokeWidth={1}
+                  strokeDasharray="6 4"
+                />
+                {e.text && (
+                  <text x={frameX1 + 6} y={e.y - 5} fontSize={12} fill={color.textPrimary}>
+                    {e.text}
+                  </text>
+                )}
+              </g>
             ))}
           </g>
         ))}
@@ -126,6 +132,22 @@ export function SequenceSvg({ ir, layout, svgRef }: Props) {
         ))}
       </g>
 
+      {/* активации */}
+      <g>
+        {layout.activations.map((a, i) => (
+          <rect
+            key={i}
+            x={a.x - 5}
+            y={Math.min(a.y1, a.y2)}
+            width={10}
+            height={Math.abs(a.y2 - a.y1)}
+            fill={color.nodeFill}
+            stroke={color.borderSubtle}
+            strokeWidth={1}
+          />
+        ))}
+      </g>
+
       {/* сообщения и заметки */}
       <g>
         {layout.rows.map((row) => {
@@ -158,11 +180,22 @@ export function SequenceSvg({ ir, layout, svgRef }: Props) {
             )
           }
           if (row.kind === 'note') {
-            const w = 120
-            const x = (row.from ?? firstX) + 24
+            const w = 130
+            const h = 30
+            let x: number
+            if (row.placement === 2) {
+              // над одним или несколькими актёрами — по центру между from..to
+              const a = row.from ?? firstX
+              const b = row.to ?? a
+              x = (a + b) / 2 - w / 2
+            } else if (row.placement === 0) {
+              x = (row.from ?? firstX) - 16 - w
+            } else {
+              x = (row.from ?? firstX) + 16
+            }
             return (
               <g key={row.id}>
-                <rect x={x} y={row.y - 16} width={w} height={32} rx={6} fill="#FFF7E6" stroke="#F3D9A4" strokeWidth={1} />
+                <rect x={x} y={row.y - h / 2} width={w} height={h} rx={6} fill="#FFF7E6" stroke="#F3D9A4" strokeWidth={1} />
                 <text x={x + w / 2} y={row.y} textAnchor="middle" dominantBaseline="central" fontSize={12} fill={color.textPrimary}>
                   {row.text}
                 </text>

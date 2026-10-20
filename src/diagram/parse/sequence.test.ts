@@ -35,12 +35,14 @@ describe('sequence: парсинг', () => {
     expect(kinds).toContain('blockEnd')
   })
 
-  it('активации игнорируются с предупреждением', async () => {
+  it('activate/deactivate парсятся как элементы', async () => {
     const ir = await seq(`sequenceDiagram
     A->>B: m
     activate B
     deactivate B`)
-    expect(ir.warnings.join(' ')).toContain('активации')
+    expect(ir.items.some((i) => i.kind === 'activate')).toBe(true)
+    expect(ir.items.some((i) => i.kind === 'deactivate')).toBe(true)
+    expect(ir.warnings).toEqual([])
   })
 
   it('заметка распознаётся', async () => {

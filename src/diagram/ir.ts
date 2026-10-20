@@ -176,7 +176,9 @@ export type SeqBlockKind = 'loop' | 'alt' | 'opt' | 'par' | 'rect'
 
 export type SeqItem =
   | { kind: 'message'; id: string; from: string; to: string; text: string; style: 'solid' | 'dashed' }
-  | { kind: 'note'; id: string; text: string; from: string }
+  | { kind: 'note'; id: string; text: string; from: string; to?: string; placement: number }
+  | { kind: 'activate'; id: string; from: string }
+  | { kind: 'deactivate'; id: string; from: string }
   | { kind: 'blockStart'; id: string; block: SeqBlockKind; text: string }
   | { kind: 'blockElse'; id: string; text: string }
   | { kind: 'blockEnd'; id: string }

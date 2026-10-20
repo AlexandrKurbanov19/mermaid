@@ -22,6 +22,14 @@ export interface SeqRow {
   to?: number
   text: string
   style?: 'solid' | 'dashed'
+  /** для заметок: placement 0=слева, 1=справа, 2=над */
+  placement?: number
+}
+
+export interface SeqActivation {
+  x: number
+  y1: number
+  y2: number
 }
 
 export interface SeqLayout {
@@ -30,6 +38,7 @@ export interface SeqLayout {
   actors: { id: string; name: string; x: number; width: number }[]
   rows: SeqRow[]
   frames: SeqFrame[]
+  activations: SeqActivation[]
 }
 
 const ACTOR_WIDTH = 150
@@ -54,7 +63,9 @@ export function layoutSequence(ir: SequenceIR, measurer: TextMeasurer, font: Fon
 
   const rows: SeqRow[] = []
   const frames: SeqFrame[] = []
+  const activations: SeqActivation[] = []
   const stack: { frame: SeqFrame; block: SeqBlockKind }[] = []
+  const activeStack = new Map<string, number[]>()
 
   const xOf = (id: string) => positions.find((p) => p.id === id)?.x ?? positions[0].x
 
@@ -66,8 +77,28 @@ export function layoutSequence(ir: SequenceIR, measurer: TextMeasurer, font: Fon
         rows.push({ id: item.id, y, kind: 'message', from: xOf(item.from), to: xOf(item.to), text: item.text, style: item.style })
         break
       case 'note':
-        rows.push({ id: item.id, y, kind: 'note', from: xOf(item.from), text: item.text })
+        rows.push({
+          id: item.id,
+          y,
+          kind: 'note',
+          from: xOf(item.from),
+          ...(item.to ? { to: xOf(item.to) } : {}),
+          text: item.text,
+          placement: item.placement,
+        })
         break
+      case 'activate': {
+        const stackFor = activeStack.get(item.from) ?? []
+        stackFor.push(y)
+        activeStack.set(item.from, stackFor)
+        break
+      }
+      case 'deactivate': {
+        const stackFor = activeStack.get(item.from) ?? []
+        const y1 = stackFor.pop()
+        if (y1 !== undefined) activations.push({ x: xOf(item.from), y1, y2: y })
+        break
+      }
       case 'blockStart': {
         const frame: SeqFrame = { block: item.block, text: item.text, y1: y - ROW_H / 2, y2: y, elseLines: [] }
         frames.push(frame)
@@ -92,5 +123,5 @@ export function layoutSequence(ir: SequenceIR, measurer: TextMeasurer, font: Fon
   const width = (lastActor ? lastActor.x + lastActor.width / 2 : MARGIN) + MARGIN
   const height = HEADER + ir.items.length * ROW_H + MARGIN
 
-  return { width, height, actors: positions, rows, frames }
+  return { width, height, actors: positions, rows, frames, activations }
 }

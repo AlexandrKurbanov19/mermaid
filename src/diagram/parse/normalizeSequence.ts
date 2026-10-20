@@ -40,7 +40,6 @@ export function normalizeSequence(db: any, source: string): SequenceIR {
 
   const messages = toArray<any>(db.getMessages?.())
   const items: SeqItem[] = []
-  let skippedActivation = false
 
   for (const m of messages) {
     const type: number = m.type
@@ -56,20 +55,18 @@ export function normalizeSequence(db: any, source: string): SequenceIR {
         style: type === 1 ? 'dashed' : 'solid',
       })
     } else if (type === 2) {
-      items.push({ kind: 'note', id: String(m.id), text, from: String(m.from ?? actorKeys[0] ?? '') })
+      items.push({ kind: 'note', id: String(m.id), text, from: String(m.from ?? actorKeys[0] ?? ''), to: m.to != null ? String(m.to) : undefined, placement: Number(m.placement ?? 1) })
     } else if (BLOCK_START[type]) {
       items.push({ kind: 'blockStart', id: String(m.id), block: BLOCK_START[type], text })
     } else if (type === 13 || type === 20) {
       items.push({ kind: 'blockElse', id: String(m.id), text })
     } else if (BLOCK_END.has(type)) {
       items.push({ kind: 'blockEnd', id: String(m.id) })
-    } else if (type === 17 || type === 18) {
-      skippedActivation = true
+    } else if (type === 17) {
+      items.push({ kind: 'activate', id: String(m.id), from: String(m.from ?? actorKeys[0] ?? '') })
+    } else if (type === 18) {
+      items.push({ kind: 'deactivate', id: String(m.id), from: String(m.from ?? actorKeys[0] ?? '') })
     }
-  }
-
-  if (skippedActivation) {
-    warnings.push('Бары активации (activate/deactivate) пока не рисуются.')
   }
 
   return { v: IR_VERSION, type: 'sequence', actors, items, warnings }
