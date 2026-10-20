@@ -1,7 +1,7 @@
 import { useId, useMemo } from 'react'
 import type { ClassIR, ClassRelation } from '../ir'
 import type { NodeBox } from '../measure/measureNode'
-import type { ClassDetails } from '../measure/measureClass'
+import { CLASS_GEOM, type ClassDetails } from '../measure/measureClass'
 import type { Layout, Point } from '../layout/layoutElk'
 import { buildOrthogonalPath } from '../layout/layoutElk'
 import { classToFlowchart } from '../layout/classAdapter'
@@ -155,26 +155,29 @@ function ClassBox({ details, x, y, width, height }: { details: ClassDetails; x: 
   const isAbstract = annotations.includes('abstract') || annotations.includes('<<abstract>>')
   const isInterface = annotations.includes('interface') || annotations.includes('<<interface>>')
 
-  let cursor = y + 24
+  const g = CLASS_GEOM
+  const divider1Y = y + g.divider1
+  const fieldTop = y + g.fieldStart
+  const divider2Y = fieldTop + fields.length * g.memberH + g.divider2Offset
+  const methodTop = (fields.length ? divider2Y + g.sectionGap : fieldTop)
+
   return (
     <g>
       <rect x={x} y={y} width={width} height={height} rx={8} fill={color.canvas} stroke={color.borderSubtle} strokeWidth={size.strokeWidth} />
-      <text x={x + width / 2} y={cursor} textAnchor="middle" dominantBaseline="central" fontSize={15} fontWeight={600} fontStyle={isAbstract ? 'italic' : undefined} fill={color.textPrimary}>
+      <text x={x + width / 2} y={y + g.nameCenter} textAnchor="middle" dominantBaseline="central" fontSize={15} fontWeight={600} fontStyle={isAbstract ? 'italic' : undefined} fill={color.textPrimary}>
         {isInterface ? `«interface» ${name}` : name}
       </text>
-      <line x1={x} y1={y + 32} x2={x + width} y2={y + 32} stroke={color.borderSubtle} strokeWidth={1} />
+      <line x1={x} y1={divider1Y} x2={x + width} y2={divider1Y} stroke={color.borderSubtle} strokeWidth={1} />
+      {fields.map((f, i) => (
+        <text key={i} x={x + 12} y={fieldTop + i * g.memberH} fontSize={13} fill={color.textPrimary}>
+          {f}
+        </text>
+      ))}
       {fields.length > 0 && (
-        <g>
-          {fields.map((f, i) => (
-            <text key={i} x={x + 12} y={y + 44 + i * 20} fontSize={13} fill={color.textPrimary}>
-              {f}
-            </text>
-          ))}
-          <line x1={x} y1={y + 44 + fields.length * 20 + 2} x2={x + width} y2={y + 44 + fields.length * 20 + 2} stroke={color.borderSubtle} strokeWidth={1} />
-        </g>
+        <line x1={x} y1={divider2Y} x2={x + width} y2={divider2Y} stroke={color.borderSubtle} strokeWidth={1} />
       )}
       {methods.map((m, i) => (
-        <text key={i} x={x + 12} y={y + 44 + fields.length * 20 + 12 + i * 20} fontSize={13} fill={color.textPrimary}>
+        <text key={i} x={x + 12} y={methodTop + i * g.memberH} fontSize={13} fill={color.textPrimary}>
           {m}
         </text>
       ))}

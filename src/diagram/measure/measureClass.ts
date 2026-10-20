@@ -7,9 +7,17 @@ import type { FontSpec, TextMeasurer } from './textMetrics'
  */
 
 const PADDING = 14
-const NAME_H = 28
-const MEMBER_H = 20
-const GAP = 6
+
+/** Геометрия class-блока: рендер и замер используют ОДНИ числа. */
+export const CLASS_GEOM = {
+  nameCenter: 26,      // центр имени от верха
+  divider1: 34,        // разделитель под именем
+  fieldStart: 58,      // базовая линия первого поля
+  memberH: 22,         // высота строки члена
+  divider2Offset: 10,  // зазор под последним полем до разделителя
+  sectionGap: 16,      // зазор от разделителя до базовой линии методов
+  bottomPad: 14,
+}
 
 export interface ClassDetails {
   name: string
@@ -46,7 +54,10 @@ export function measureClassNodes(
     const width = Math.max(120, Math.ceil(Math.max(nameW, maxMember)) + PADDING * 2)
 
     const rows = fields.length + methods.length
-    const height = NAME_H + (fields.length ? fields.length * MEMBER_H + GAP : 0) + (methods.length ? methods.length * MEMBER_H + GAP : 0) + 12
+    const g = CLASS_GEOM
+    const fieldsSection = fields.length ? fields.length * g.memberH + g.divider2Offset + g.sectionGap : 0
+    const methodsSection = methods.length ? methods.length * g.memberH + g.sectionGap : 0
+    const height = g.divider1 + fieldsSection + methodsSection + g.bottomPad
 
     boxes[node.id] = {
       width,
