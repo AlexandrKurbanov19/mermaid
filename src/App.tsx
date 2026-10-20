@@ -19,6 +19,8 @@ import { measureErNodes, type EntityDetails } from './diagram/measure/measureEr'
 import { erToFlowchart } from './diagram/layout/erAdapter'
 import { MindmapSvg } from './diagram/render/MindmapSvg'
 import { layoutMindmap } from './diagram/layout/layoutMindmap'
+import { JourneySvg } from './diagram/render/JourneySvg'
+import { layoutJourney } from './diagram/layout/layoutJourney'
 import { ZoomPane } from './diagram/render/ZoomPane'
 import { SyntaxHelp } from './components/SyntaxHelp'
 import { toSvgString, downloadSvg, downloadBlob } from './diagram/export/toSvgString'
@@ -87,6 +89,7 @@ export function App() {
   const classIr = parse.status === 'ok' && parse.ir.type === 'class' ? parse.ir : null
   const erIr = parse.status === 'ok' && parse.ir.type === 'er' ? parse.ir : null
   const mindmapIr = parse.status === 'ok' && parse.ir.type === 'mindmap' ? parse.ir : null
+  const journeyIr = parse.status === 'ok' && parse.ir.type === 'journey' ? parse.ir : null
 
   // [3] габариты узлов (fit-text) — синхронно из IR
   const boxes: Record<string, NodeBox> | null = useMemo(
@@ -143,6 +146,11 @@ export function App() {
     [mindmapIr, fontSpec],
   )
 
+  const journeyLayout = useMemo(
+    () => (journeyIr ? layoutJourney(journeyIr, measurer, fontSpec) : null),
+    [journeyIr, fontSpec],
+  )
+
   const stateBoxes: Record<string, NodeBox> | null = useMemo(
     () => (stateIr ? measureStateNodes(stateIr, fontSpec, measurer) : null),
     [stateIr, fontSpec],
@@ -181,6 +189,10 @@ export function App() {
 
 
   const stats = useMemo(() => {
+    if (journeyIr) {
+      const tasks = journeyIr.sections.reduce((s, sec) => s + sec.tasks.length, 0)
+      return { text: `${plural(journeyIr.sections.length, 'секция', 'секции', 'секций')} · ${plural(tasks, 'задача', 'задачи', 'задач')}` }
+    }
     if (mindmapIr) {
       const count = (n: any): number => 1 + n.children.reduce((s: number, c: any) => s + count(c), 0)
       return { text: `${count(mindmapIr.root)} узлов` }
@@ -272,6 +284,8 @@ export function App() {
     <ErSvg ir={erIr} boxes={erMeasure.boxes} details={erMeasure.details} layout={erLayout} svgRef={svgRef} />
   ) : mindmapIr && mindmapLayout ? (
     <MindmapSvg ir={mindmapIr} layout={mindmapLayout} svgRef={svgRef} />
+  ) : journeyIr && journeyLayout ? (
+    <JourneySvg ir={journeyIr} layout={journeyLayout} svgRef={svgRef} />
   ) : null
 
   const zoomSize = layout
@@ -286,7 +300,9 @@ export function App() {
             ? { width: erLayout.width, height: erLayout.height }
             : mindmapLayout
               ? { width: mindmapLayout.width, height: mindmapLayout.height }
-              : null
+              : journeyLayout
+                ? { width: journeyLayout.width, height: journeyLayout.height }
+                : null
 
   // НЕ использовать svgRef в рендере: реф не триггерит перерисовку, и после первого
   // рендера кнопки оставались задизейбленными до следующего взаимодействия.

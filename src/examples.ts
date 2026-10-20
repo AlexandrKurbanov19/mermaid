@@ -331,8 +331,20 @@ export const EXAMPLES: Example[] = [
       Лист B1`,
   },
   {
+    id: 'journey',
+    title: '33. Journey',
+    checks: 'journey: секции, задачи, оценка 1–5',
+    source: `journey
+    title Поездка
+    section Утро
+      Проснулся: 5: Я
+      Кофе: 3: Я
+    section День
+      Работа: 2: Я, Команда`,
+  },
+  {
     id: 'error-syntax',
-    title: '33. ОШИБКА: битый синтаксис',
+    title: '34. ОШИБКА: битый синтаксис',
     checks: 'плашка ошибки, превью не падает',
     source: `flowchart TD
     A[Старт] -->
@@ -340,7 +352,7 @@ export const EXAMPLES: Example[] = [
   },
   {
     id: 'error-type',
-    title: '34. ОШИБКА: другой тип диаграммы',
+    title: '35. ОШИБКА: другой тип диаграммы',
     checks: 'sequenceDiagram в v1 не поддерживается',
     source: `sequenceDiagram
     A->>B: привет`,

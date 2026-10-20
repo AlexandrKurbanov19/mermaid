@@ -153,6 +153,18 @@ export const SYNTAX_GROUPS: SyntaxGroup[] = [
       },
     ],
   },
+  {
+    id: 'journey',
+    title: 'Journey',
+    items: [
+      {
+        id: 'journey-basic',
+        title: 'Задачи с оценкой',
+        note: 'section группирует; «задача: оценка: люди»',
+        code: 'journey\n    title Поездка\n    section Утро\n      Проснулся: 5: Я\n    section День\n      Работа: 3: Я, Команда',
+      },
+    ],
+  },
 ]
 
 export const SYNTAX_TOTAL = SYNTAX_GROUPS.reduce((sum, group) => sum + group.items.length, 0)

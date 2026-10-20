@@ -13,7 +13,7 @@
 
 export const IR_VERSION = 1 as const
 
-export type DiagramType = 'flowchart' | 'timeline' | 'state' | 'sequence' | 'class' | 'er' | 'mindmap'
+export type DiagramType = 'flowchart' | 'timeline' | 'state' | 'sequence' | 'class' | 'er' | 'mindmap' | 'journey'
 
 export type Direction = 'TB' | 'BT' | 'LR' | 'RL'
 
@@ -258,7 +258,24 @@ export interface MindmapIR extends BaseIR {
   root: MindNode
 }
 
-export type DiagramIR = FlowchartIR | TimelineIR | StateIR | SequenceIR | ClassIR | ERIR | MindmapIR
+export interface JourneyTask {
+  task: string
+  score: number
+  people: string[]
+}
+
+export interface JourneySection {
+  name: string
+  tasks: JourneyTask[]
+}
+
+export interface JourneyIR extends BaseIR {
+  type: 'journey'
+  title?: string
+  sections: JourneySection[]
+}
+
+export type DiagramIR = FlowchartIR | TimelineIR | StateIR | SequenceIR | ClassIR | ERIR | MindmapIR | JourneyIR
 
 export const isFlowchart = (ir: DiagramIR): ir is FlowchartIR => ir.type === 'flowchart'
 export const isTimeline = (ir: DiagramIR): ir is TimelineIR => ir.type === 'timeline'
@@ -267,3 +284,4 @@ export const isSequence = (ir: DiagramIR): ir is SequenceIR => ir.type === 'sequ
 export const isClass = (ir: DiagramIR): ir is ClassIR => ir.type === 'class'
 export const isEr = (ir: DiagramIR): ir is ERIR => ir.type === 'er'
 export const isMindmap = (ir: DiagramIR): ir is MindmapIR => ir.type === 'mindmap'
+export const isJourney = (ir: DiagramIR): ir is JourneyIR => ir.type === 'journey'
