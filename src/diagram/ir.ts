@@ -142,6 +142,14 @@ export interface StateNode {
   kind: StateNodeKind
   label: TextBlock
   description: TextBlock[]
+  /** id composite-состояния, если узел вложен в него */
+  parentId?: string
+}
+
+export interface StateGroup {
+  id: string
+  label?: TextBlock
+  nodeIds: string[]
 }
 
 export interface StateTransition {
@@ -155,6 +163,7 @@ export interface StateIR extends BaseIR {
   type: 'state'
   nodes: StateNode[]
   transitions: StateTransition[]
+  groups: StateGroup[]
 }
 
 export type DiagramIR = FlowchartIR | TimelineIR | StateIR

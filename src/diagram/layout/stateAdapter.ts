@@ -13,7 +13,12 @@ export function stateToFlowchart(ir: StateIR): FlowchartIR {
     v: 1,
     type: 'flowchart',
     direction: 'TB',
-    nodes: ir.nodes.map((n) => ({ id: n.id, role: 'round', label: n.label })),
+    nodes: ir.nodes.map((n) => ({
+      id: n.id,
+      role: 'round',
+      label: n.label,
+      ...(n.parentId ? { parentId: n.parentId } : {}),
+    })),
     edges: ir.transitions.map((t, i) => ({
       id: t.id,
       from: t.from,
@@ -22,7 +27,7 @@ export function stateToFlowchart(ir: StateIR): FlowchartIR {
       arrow: 'end' as const,
       ...(t.label ? { label: t.label } : {}),
     })),
-    groups: [],
+    groups: ir.groups.map((g) => ({ id: g.id, label: g.label, nodeIds: g.nodeIds, tone: 'neutral' as const })),
     warnings: [],
   }
 }

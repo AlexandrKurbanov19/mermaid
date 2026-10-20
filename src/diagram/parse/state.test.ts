@@ -45,13 +45,26 @@ describe('state: парсинг', () => {
     expect(idle.description[0].lines[0][0].text).toBe('Ожидание команды')
   })
 
-  it('composite даёт предупреждение, а не падение', async () => {
+  it('composite расплющивается в группу с внутренними узлами', async () => {
     const ir = await state(`stateDiagram-v2
     [*] --> Parent
     state Parent {
       [*] --> Child
-    }`)
-    expect(ir.warnings.join(' ')).toContain('composite')
+      Child --> [*]
+    }
+    Parent --> Done`)
+
+    expect(ir.groups).toHaveLength(1)
+    const group = ir.groups[0]
+    expect(group.id).toBe('Parent')
+    expect(group.nodeIds).toContain('Child')
+
+    // внешний переход в composite ведёт на внутренний старт
+    const into = ir.transitions.find((t) => t.from === 'root_start')!
+    expect(into.to).toBe('Parent_start')
+    // переход из composite выходит из внутреннего конца
+    const out = ir.transitions.find((t) => t.to === 'Done')!
+    expect(out.from).toBe('Parent_end')
   })
 
   it('transition без подписи не создаёт пустой label', async () => {

@@ -54,6 +54,35 @@ export function StateSvg({ ir, boxes, layout, svgRef }: Props) {
 
       <rect id="canvas-bg" x={0} y={0} width={layout.width} height={layout.height} fill={color.canvas} />
 
+      {/* composite-группы */}
+      <g>
+        {ir.groups.map((group) => {
+          const bbox = layout.groups?.[group.id]
+          if (!bbox) return null
+          const label = group.label?.lines.map((l) => l.map((r) => r.text).join('')).join(' ') ?? ''
+          return (
+            <g key={group.id}>
+              <rect
+                x={bbox.x}
+                y={bbox.y}
+                width={bbox.width}
+                height={bbox.height}
+                rx={size.radius + 4}
+                fill="none"
+                stroke={color.groupStrokeNeutral}
+                strokeWidth={1}
+                strokeDasharray="6 4"
+              />
+              {label && (
+                <text x={bbox.x + 12} y={bbox.y + 20} fontSize={14} fill={color.groupLabel}>
+                  {label}
+                </text>
+              )}
+            </g>
+          )
+        })}
+      </g>
+
       {/* переходы */}
       <g>
         {edgeGeometry.map((edge) => {
