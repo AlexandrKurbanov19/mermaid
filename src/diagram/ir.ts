@@ -13,7 +13,7 @@
 
 export const IR_VERSION = 1 as const
 
-export type DiagramType = 'flowchart' | 'timeline'
+export type DiagramType = 'flowchart' | 'timeline' | 'state'
 
 export type Direction = 'TB' | 'BT' | 'LR' | 'RL'
 
@@ -128,7 +128,34 @@ export interface TimelineIR extends BaseIR {
   lanes: TimelineLane[]
 }
 
-export type DiagramIR = FlowchartIR | TimelineIR
+export type StateNodeKind =
+  | 'start' // [*] начало
+  | 'end' // [*] конец
+  | 'state' // обычное состояние
+  | 'composite' // вложенное состояние (v2 pass 1: рисуем как обычное)
+
+export interface StateNode {
+  id: string
+  kind: StateNodeKind
+  label: TextBlock
+  description: TextBlock[]
+}
+
+export interface StateTransition {
+  id: string
+  from: string
+  to: string
+  label?: TextBlock
+}
+
+export interface StateIR extends BaseIR {
+  type: 'state'
+  nodes: StateNode[]
+  transitions: StateTransition[]
+}
+
+export type DiagramIR = FlowchartIR | TimelineIR | StateIR
 
 export const isFlowchart = (ir: DiagramIR): ir is FlowchartIR => ir.type === 'flowchart'
 export const isTimeline = (ir: DiagramIR): ir is TimelineIR => ir.type === 'timeline'
+export const isState = (ir: DiagramIR): ir is StateIR => ir.type === 'state'
