@@ -36,12 +36,13 @@ describe('state: парсинг', () => {
     expect(text(start)).toBe('')
   })
 
-  it('описание состояния попадает в label (особенность mermaid)', async () => {
+  it('описание состояния уходит в description, а label остаётся именем', async () => {
     const ir = await state(`stateDiagram-v2
     [*] --> Idle
     Idle : Ожидание команды`)
     const idle = ir.nodes.find((n) => n.id === 'Idle')!
-    expect(text(idle)).toBe('Ожидание команды')
+    expect(text(idle)).toBe('Idle')
+    expect(idle.description[0].lines[0][0].text).toBe('Ожидание команды')
   })
 
   it('composite даёт предупреждение, а не падение', async () => {
@@ -57,5 +58,18 @@ describe('state: парсинг', () => {
     const ir = await state(`stateDiagram-v2
     A --> B`)
     expect(ir.transitions[0].label).toBeUndefined()
+  })
+
+  it('choice/fork/join распознаются из getRootDocV2', async () => {
+    const ir = await state(`stateDiagram-v2
+    [*] --> c
+    state c <<choice>>
+    c --> A
+    state f <<fork>>
+    state j <<join>>`)
+    const kind = (id: string) => ir.nodes.find((n) => n.id === id)!.kind
+    expect(kind('c')).toBe('choice')
+    expect(kind('f')).toBe('fork')
+    expect(kind('j')).toBe('join')
   })
 })

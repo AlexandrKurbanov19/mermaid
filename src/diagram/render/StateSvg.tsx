@@ -146,39 +146,83 @@ export function StateSvg({ ir, boxes, layout, svgRef }: Props) {
 }
 
 function StateNode({ node, box, x, y }: { node: StateIR['nodes'][number]; box: NodeBox; x: number; y: number }) {
-  const { lines, fontSize, lineHeight } = box.fit
+  // fork/join — горизонтальная черта (как в UML)
+  if (node.kind === 'fork' || node.kind === 'join') {
+    return (
+      <rect
+        x={x}
+        y={y + box.height / 2 - 6}
+        width={box.width}
+        height={12}
+        rx={6}
+        fill={color.brandNeo}
+      />
+    )
+  }
+
+  // choice — ромб
+  if (node.kind === 'choice') {
+    const cx = x + box.width / 2
+    const cy = y + box.height / 2
+    return (
+      <g>
+        <polygon
+          points={`${cx},${y} ${x + box.width},${cy} ${cx},${y + box.height} ${x},${cy}`}
+          fill={color.nodeFill}
+          stroke={color.borderSubtle}
+          strokeWidth={size.strokeWidth}
+        />
+        <StateLabel box={box} x={x} y={y} />
+      </g>
+    )
+  }
+
+  // state / composite
   return (
     <g>
-      <rect x={x} y={y} width={box.width} height={box.height} rx={size.radius} fill={color.nodeFill} stroke={color.borderSubtle} strokeWidth={size.strokeWidth} />
-      {lines.length > 0 && (
-        <g>
-          {lines.map((line, i) => {
-            const totalHeight = lines.length * lineHeight
-            const cy = y + (box.height - totalHeight) / 2 + lineHeight / 2 + i * lineHeight
-            return (
-              <text
-                key={i}
-                x={x + box.width / 2}
-                y={cy}
-                textAnchor="middle"
-                dominantBaseline="central"
-                fontSize={fontSize}
-                fill={color.textPrimary}
-              >
-                {line.runs.length ? (
-                  line.runs.map((run: InlineRun, j) => (
-                    <tspan key={j} fontWeight={run.bold ? font.weight.semibold : font.weight.regular}>
-                      {run.text}
-                    </tspan>
-                  ))
-                ) : (
-                  '\u00A0'
-                )}
-              </text>
-            )
-          })}
-        </g>
-      )}
+      <rect
+        x={x}
+        y={y}
+        width={box.width}
+        height={box.height}
+        rx={size.radius}
+        fill={color.nodeFill}
+        stroke={color.borderSubtle}
+        strokeWidth={size.strokeWidth}
+      />
+      <StateLabel box={box} x={x} y={y} />
+    </g>
+  )
+}
+
+function StateLabel({ box, x, y }: { box: NodeBox; x: number; y: number }) {
+  const { lines, fontSize, lineHeight } = box.fit
+  if (!lines.length) return null
+  const totalHeight = lines.length * lineHeight
+  const firstLineY = y + (box.height - totalHeight) / 2 + lineHeight / 2
+  return (
+    <g>
+      {lines.map((line, i) => (
+        <text
+          key={i}
+          x={x + box.width / 2}
+          y={firstLineY + i * lineHeight}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={fontSize}
+          fill={color.textPrimary}
+        >
+          {line.runs.length ? (
+            line.runs.map((run: InlineRun, j) => (
+              <tspan key={j} fontWeight={run.bold ? font.weight.semibold : font.weight.regular}>
+                {run.text}
+              </tspan>
+            ))
+          ) : (
+            '\u00A0'
+          )}
+        </text>
+      ))}
     </g>
   )
 }

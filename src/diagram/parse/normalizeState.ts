@@ -1,73 +1,98 @@
-import { IR_VERSION, type StateIR, type StateNode, type StateTransition } from '../ir'
+import { IR_VERSION, type StateIR, type StateNode, type StateNodeKind, type StateTransition } from '../ir'
 import { parseLabel } from './label'
 
 /**
  * mermaid `stateDiagram-v2` -> StateIR.
  *
- * Что выяснил спайком (см. docs/SPEC-V2-RESEARCH.md):
- *  - db.getData().nodes: { id, shape, label, descriptions?, isGroup }
- *  - db.getRelations(): [{ id1, id2, relationTitle }]
- *  - start/end имеют id root_start/root_end и shape stateStart/stateEnd
- *  - `X : описание` кладёт описание В label (не в descriptions)
- *  - `<<choice>>`/`<<fork>>` НЕ меняют shape — стереотип живёт в classes (pass 2)
- *  - внутренние рёбра композитного состояния НЕ попадают в getRelations (pass 2)
+ * Источник данных — `db.getRootDocV2().doc` (проверено спайком):
+ *   { stmt:'relation', state1:{id,type,description,start?,end?}, state2:{...}, description }
+ *   { stmt:'state', id, type: 'default'|'choice'|'fork'|'join'|'composite'|'divider' }
  *
- * Поэтому pass 1: start/end + обычные состояния + переходы с подписями.
- * choice/fork/join/composite — отложены, отмечено в warnings.
+ * getData().nodes НЕ показывает choice (shape там 'rect'), поэтому спайк привёл
+ * именно к getRootDocV2.
  */
 
-const SHAPE_TO_KIND: Record<string, StateNode['kind']> = {
-  stateStart: 'start',
-  stateEnd: 'end',
-  state: 'state',
-  rect: 'state', // mermaid отдаёт обычное состояние как rect
-  roundedWithTitle: 'composite',
-  composite: 'composite',
-  default: 'state',
+interface DocState {
+  id: string
+  type?: string
+  description?: string
+  start?: boolean
+  end?: boolean
 }
 
-function toArray<T>(v: unknown): T[] {
-  if (v instanceof Map) return [...v.values()] as T[]
-  if (Array.isArray(v)) return v as T[]
-  return []
+interface DocItem {
+  stmt: 'relation' | 'state'
+  state1?: DocState
+  state2?: DocState
+  id?: string
+  type?: string
+  description?: string
+}
+
+const TYPE_TO_KIND: Record<string, StateNodeKind> = {
+  choice: 'choice',
+  fork: 'fork',
+  join: 'join',
+  composite: 'composite',
+  divider: 'state',
+}
+
+function kindOf(s: DocState | undefined): StateNodeKind {
+  // root_start имеет start:true, root_end — start:false (это и есть маркеры)
+  if (s?.start === true) return 'start'
+  if (s?.start === false) return 'end'
+  return TYPE_TO_KIND[s?.type ?? ''] ?? 'state'
 }
 
 export function normalizeState(db: any, source: string): StateIR {
   const warnings: string[] = []
+  const doc: DocItem[] = db.getRootDocV2?.().doc ?? []
 
-  const dataNodes = toArray<any>(db.getData?.().nodes ?? [])
-  const relations = toArray<any>(db.getRelations?.())
+  const nodeMap = new Map<string, { kind: StateNodeKind; description: string }>()
 
-  const nodes: StateNode[] = dataNodes.map((n) => {
-    const kind = SHAPE_TO_KIND[n.shape] ?? 'state'
-    // старт/конец не имеют пользовательского текста
-    const rawLabel = kind === 'start' || kind === 'end' ? '' : String(n.label ?? '')
-    const label = parseLabel(rawLabel, n.labelType)
-
-    return {
-      id: String(n.id),
-      kind,
-      label,
-      description: toArray<any>(n.descriptions).map((d) => parseLabel(String(d), n.labelType)),
+  const ensure = (s: DocState | undefined) => {
+    if (!s) return
+    if (!nodeMap.has(s.id)) {
+      nodeMap.set(s.id, { kind: kindOf(s), description: s.description ?? '' })
     }
+  }
+
+  const transitions: StateTransition[] = []
+
+  for (const item of doc) {
+    if (item.stmt === 'relation') {
+      ensure(item.state1)
+      ensure(item.state2)
+      transitions.push({
+        id: `t-${transitions.length}`,
+        from: String(item.state1!.id),
+        to: String(item.state2!.id),
+        ...(item.description ? { label: parseLabel(item.description, 'text') } : {}),
+      })
+    } else if (item.stmt === 'state') {
+      const id = String(item.id)
+      // композит определяется вложенным doc, а не type (type там 'default')
+      const kind: StateNodeKind = (item as any).doc && Array.isArray((item as any).doc)
+        ? 'composite'
+        : TYPE_TO_KIND[item.type ?? ''] ?? 'state'
+      const existing = nodeMap.get(id)
+      nodeMap.set(id, {
+        kind: existing && existing.kind !== 'state' ? existing.kind : kind,
+        description: existing?.description || item.description || '',
+      })
+    }
+  }
+
+  const nodes: StateNode[] = [...nodeMap.entries()].map(([id, v]) => {
+    const isMark = v.kind === 'start' || v.kind === 'end' || v.kind === 'fork' || v.kind === 'join'
+    const label = isMark ? parseLabel('') : parseLabel(id)
+    const description = v.description ? [parseLabel(v.description, 'text')] : []
+    return { id, kind: v.kind, label, description }
   })
 
-  const transitions: StateTransition[] = relations.map((r, i) => ({
-    id: `t-${i}`,
-    from: String(r.id1),
-    to: String(r.id2),
-    ...(r.relationTitle ? { label: parseLabel(String(r.relationTitle), 'text') } : {}),
-  }))
-
-  if (dataNodes.some((n) => n.shape === 'roundedWithTitle' || n.isGroup)) {
+  if (nodes.some((n) => n.kind === 'composite')) {
     warnings.push('Вложенные (composite) состояния пока рисуются как обычные.')
   }
 
-  return {
-    v: IR_VERSION,
-    type: 'state',
-    nodes,
-    transitions,
-    warnings,
-  }
+  return { v: IR_VERSION, type: 'state', nodes, transitions, warnings }
 }

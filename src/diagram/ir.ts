@@ -132,7 +132,10 @@ export type StateNodeKind =
   | 'start' // [*] начало
   | 'end' // [*] конец
   | 'state' // обычное состояние
-  | 'composite' // вложенное состояние (v2 pass 1: рисуем как обычное)
+  | 'choice' // <<choice>> — ромб-ветвление
+  | 'fork' // <<fork>> — разветвление
+  | 'join' // <<join>> — слияние
+  | 'composite' // вложенное состояние (рисуем как обычное)
 
 export interface StateNode {
   id: string
