@@ -93,6 +93,18 @@ export const SYNTAX_GROUPS: SyntaxGroup[] = [
       },
     ],
   },
+  {
+    id: 'state',
+    title: 'State-диаграмма',
+    items: [
+      {
+        id: 'state-basic',
+        title: 'Состояния и переходы',
+        note: '[*] — старт/конец; подпись перехода после двоеточия',
+        code: 'stateDiagram-v2\n    [*] --> Idle\n    Idle --> Running : start\n    Running --> [*] : stop',
+      },
+    ],
+  },
 ]
 
 export const SYNTAX_TOTAL = SYNTAX_GROUPS.reduce((sum, group) => sum + group.items.length, 0)

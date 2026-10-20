@@ -1,6 +1,7 @@
 import mermaid from 'mermaid'
 import type { DiagramIR } from '../ir'
 import { normalize } from './normalize'
+import { normalizeState } from './normalizeState'
 
 /**
  * Шаг [1] пайплайна: Mermaid-разметка -> IR.
@@ -35,8 +36,9 @@ function ensureInit() {
   initialized = true
 }
 
-/** В v1 поддерживается только flowchart (блок-схемы) с любым направлением. */
+/** Поддерживаемые типы. v1 = flowchart; v2 добавляет state. */
 const FLOWCHART_TYPES = new Set(['flowchart', 'flowchart-v2', 'graph', 'flow'])
+const STATE_TYPES = new Set(['stateDiagram', 'stateDiagram-v2', 'state'])
 
 function extractLine(err: unknown): number | undefined {
   if (typeof err !== 'object' || err === null) return undefined
@@ -82,12 +84,19 @@ export async function parseMermaid(text: string): Promise<ParseResult> {
     const type: string = diagram?.type ?? ''
     const db = diagram?.db
 
+    if (STATE_TYPES.has(type)) {
+      if (!db || typeof db.getRelations !== 'function') {
+        return { ok: false, error: { kind: 'unsupported-type', message: 'Не удалось разобрать state-диаграмму.' } }
+      }
+      return { ok: true, ir: normalizeState(db, source) }
+    }
+
     if (type && !FLOWCHART_TYPES.has(type)) {
       return {
         ok: false,
         error: {
           kind: 'unsupported-type',
-          message: `Тип диаграммы «${type}» не поддерживается в первой версии: только flowchart (блок-схемы). sequence, class, state, ER, gantt, timeline, mindmap и др. — вне v1.`,
+          message: `Тип диаграммы «${type}» пока не поддерживается. Доступны flowchart и state.`,
         },
       }
     }

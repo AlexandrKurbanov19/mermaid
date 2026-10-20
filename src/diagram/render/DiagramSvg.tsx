@@ -4,6 +4,7 @@ import type { NodeBox } from '../measure/measureNode'
 import type { Layout } from '../layout/layoutElk'
 import { buildOrthogonalPath } from '../layout/layoutElk'
 import { buildEdgeGeometries } from './edgeLayout'
+import { ArrowMarker } from './markers'
 import { measurer } from '../measure/textMetrics'
 import { badge as badgeTheme, color, font, size, type as typography } from '../theme'
 
@@ -197,24 +198,6 @@ export function DiagramSvg({ ir, boxes, layout, svgRef }: Props) {
 /** Связь-разделитель: в архиве между чипами стоит «+» без линии. */
 function isGhostEdge(edge: { arrow: string } | undefined, labelText: string | undefined): boolean {
   return edge?.arrow === 'none' && (labelText === '+' || labelText === '·' || labelText === '→')
-}
-
-function ArrowMarker({ id, fill }: { id: string; fill: string }) {
-  const a = size.arrow
-  return (
-    <marker
-      id={id}
-      viewBox={`0 0 ${a} ${a}`}
-      refX={a - 1}
-      refY={a / 2}
-      markerWidth={a}
-      markerHeight={a}
-      markerUnits="userSpaceOnUse"
-      orient="auto-start-reverse"
-    >
-      <path d={`M 0 0 L ${a} ${a / 2} L 0 ${a} z`} fill={fill} />
-    </marker>
-  )
 }
 
 function NodeShape({

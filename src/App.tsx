@@ -6,6 +6,9 @@ import { measurer } from './diagram/measure/textMetrics'
 import { measureNodes, type NodeBox } from './diagram/measure/measureNode'
 import { layoutDiagram, type Layout } from './diagram/layout/layoutElk'
 import { DiagramSvg } from './diagram/render/DiagramSvg'
+import { StateSvg } from './diagram/render/StateSvg'
+import { measureStateNodes } from './diagram/measure/measureState'
+import { stateToFlowchart } from './diagram/layout/stateAdapter'
 import { ZoomPane } from './diagram/render/ZoomPane'
 import { SyntaxHelp } from './components/SyntaxHelp'
 import { toSvgString, downloadSvg, downloadBlob } from './diagram/export/toSvgString'
@@ -69,11 +72,16 @@ export function App() {
   }, [debounced])
 
   const flowchartIr = parse.status === 'ok' && parse.ir.type === 'flowchart' ? parse.ir : null
+  const stateIr = parse.status === 'ok' && parse.ir.type === 'state' ? parse.ir : null
 
   // [3] габариты узлов (fit-text) — синхронно из IR
   const boxes: Record<string, NodeBox> | null = useMemo(
     () => (flowchartIr ? measureNodes(flowchartIr, fontSpec, measurer) : null),
     [flowchartIr, fontSpec],
+  )
+  const stateBoxes: Record<string, NodeBox> | null = useMemo(
+    () => (stateIr ? measureStateNodes(stateIr, fontSpec, measurer) : null),
+    [stateIr, fontSpec],
   )
 
   // [4] раскладка — асинхронно (ELK)
@@ -91,8 +99,34 @@ export function App() {
     }
   }, [flowchartIr, boxes])
 
+  // [4] раскладка state — тоже через ELK (через адаптер state->flowchart)
+  const [stateLayout, setStateLayout] = useState<Layout | null>(null)
+  useEffect(() => {
+    if (!stateIr || !stateBoxes) {
+      setStateLayout(null)
+      return
+    }
+    let cancelled = false
+    layoutDiagram(stateToFlowchart(stateIr), stateBoxes).then((result) => {
+      if (!cancelled) setStateLayout(result)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [stateIr, stateBoxes])
+
 
   const stats = useMemo(() => {
+    if (stateIr) {
+      return {
+        text: `${plural(stateIr.nodes.length, 'состояние', 'состояния', 'состояний')} · ${plural(
+          stateIr.transitions.length,
+          'переход',
+          'перехода',
+          'переходов',
+        )}`,
+      }
+    }
     if (flowchartIr && boxes) {
       const shrunk = flowchartIr.nodes.filter((n) => (boxes[n.id]?.fit.fontSize ?? 0) < typography.node.size).length
       return {
@@ -137,9 +171,15 @@ export function App() {
 
   const diagram = flowchartIr && boxes && layout ? (
     <DiagramSvg ir={flowchartIr} boxes={boxes} layout={layout} svgRef={svgRef} />
+  ) : stateIr && stateBoxes && stateLayout ? (
+    <StateSvg ir={stateIr} boxes={stateBoxes} layout={stateLayout} svgRef={svgRef} />
   ) : null
 
-  const zoomSize = layout ? { width: layout.width, height: layout.height } : null
+  const zoomSize = layout
+    ? { width: layout.width, height: layout.height }
+    : stateLayout
+      ? { width: stateLayout.width, height: stateLayout.height }
+      : null
 
   // НЕ использовать svgRef в рендере: реф не триггерит перерисовку, и после первого
   // рендера кнопки оставались задизейбленными до следующего взаимодействия.
@@ -199,7 +239,7 @@ export function App() {
           spellCheck={false}
         />
         <span style={{ fontSize: 12, color: '#808080' }}>
-          Поддерживается только flowchart (блок-схемы): TD/TB, LR, BT, RL. Не помнишь синтаксис — кнопка «Синтаксис ?».
+          Поддерживаются flowchart (TD/TB, LR, BT, RL) и state-диаграммы. Не помнишь синтаксис — кнопка «Синтаксис ?».
         </span>
 
         {helpOpen && (

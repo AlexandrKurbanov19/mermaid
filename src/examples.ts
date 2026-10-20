@@ -262,8 +262,18 @@ export const EXAMPLES: Example[] = [
   UI --> API --> DB[(Database)]`,
   },
   {
+    id: 'state',
+    title: '28. State-диаграмма',
+    checks: 'stateDiagram-v2: старт/конец, состояния, переходы с подписями',
+    source: `stateDiagram-v2
+    [*] --> Idle
+    Idle --> Running : start
+    Running --> [*] : stop
+    Running --> Idle : reset`,
+  },
+  {
     id: 'error-syntax',
-    title: '28. ОШИБКА: битый синтаксис',
+    title: '29. ОШИБКА: битый синтаксис',
     checks: 'плашка ошибки, превью не падает',
     source: `flowchart TD
     A[Старт] -->
@@ -271,7 +281,7 @@ export const EXAMPLES: Example[] = [
   },
   {
     id: 'error-type',
-    title: '29. ОШИБКА: другой тип диаграммы',
+    title: '30. ОШИБКА: другой тип диаграммы',
     checks: 'sequenceDiagram в v1 не поддерживается',
     source: `sequenceDiagram
     A->>B: привет`,
