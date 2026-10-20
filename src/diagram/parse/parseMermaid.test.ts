@@ -185,7 +185,7 @@ describe('ошибки', () => {
   })
 
   it('неподдерживаемый тип -> unsupported-type', async () => {
-    const res = await parseMermaid('sequenceDiagram\n A->>B: привет')
+    const res = await parseMermaid('classDiagram\n class Animal')
     expect(res.ok).toBe(false)
     if (res.ok) return
     expect(res.error.kind).toBe('unsupported-type')

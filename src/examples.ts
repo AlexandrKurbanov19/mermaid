@@ -272,8 +272,25 @@ export const EXAMPLES: Example[] = [
     Running --> Idle : reset`,
   },
   {
+    id: 'sequence',
+    title: '29. Sequence-диаграмма',
+    checks: 'sequenceDiagram: актёры, сообщения, loop/alt',
+    source: `sequenceDiagram
+    Client->>API: запрос
+    API-->>Client: ответ
+    loop Повтор
+      API->>DB: запрос к базе
+      DB-->>API: данные
+    end
+    alt Успех
+      API->>Client: 200 OK
+    else Ошибка
+      API->>Client: 500
+    end`,
+  },
+  {
     id: 'error-syntax',
-    title: '29. ОШИБКА: битый синтаксис',
+    title: '30. ОШИБКА: битый синтаксис',
     checks: 'плашка ошибки, превью не падает',
     source: `flowchart TD
     A[Старт] -->
@@ -281,7 +298,7 @@ export const EXAMPLES: Example[] = [
   },
   {
     id: 'error-type',
-    title: '30. ОШИБКА: другой тип диаграммы',
+    title: '31. ОШИБКА: другой тип диаграммы',
     checks: 'sequenceDiagram в v1 не поддерживается',
     source: `sequenceDiagram
     A->>B: привет`,

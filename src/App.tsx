@@ -9,6 +9,8 @@ import { DiagramSvg } from './diagram/render/DiagramSvg'
 import { StateSvg } from './diagram/render/StateSvg'
 import { measureStateNodes } from './diagram/measure/measureState'
 import { stateToFlowchart } from './diagram/layout/stateAdapter'
+import { SequenceSvg } from './diagram/render/SequenceSvg'
+import { layoutSequence } from './diagram/layout/layoutSequence'
 import { ZoomPane } from './diagram/render/ZoomPane'
 import { SyntaxHelp } from './components/SyntaxHelp'
 import { toSvgString, downloadSvg, downloadBlob } from './diagram/export/toSvgString'
@@ -73,12 +75,18 @@ export function App() {
 
   const flowchartIr = parse.status === 'ok' && parse.ir.type === 'flowchart' ? parse.ir : null
   const stateIr = parse.status === 'ok' && parse.ir.type === 'state' ? parse.ir : null
+  const sequenceIr = parse.status === 'ok' && parse.ir.type === 'sequence' ? parse.ir : null
 
   // [3] габариты узлов (fit-text) — синхронно из IR
   const boxes: Record<string, NodeBox> | null = useMemo(
     () => (flowchartIr ? measureNodes(flowchartIr, fontSpec, measurer) : null),
     [flowchartIr, fontSpec],
   )
+  const sequenceLayout = useMemo(
+    () => (sequenceIr ? layoutSequence(sequenceIr, measurer, fontSpec) : null),
+    [sequenceIr, fontSpec],
+  )
+
   const stateBoxes: Record<string, NodeBox> | null = useMemo(
     () => (stateIr ? measureStateNodes(stateIr, fontSpec, measurer) : null),
     [stateIr, fontSpec],
@@ -117,6 +125,17 @@ export function App() {
 
 
   const stats = useMemo(() => {
+    if (sequenceIr) {
+      const messages = sequenceIr.items.filter((i) => i.kind === 'message').length
+      return {
+        text: `${plural(sequenceIr.actors.length, 'актёр', 'актёра', 'актёров')} · ${plural(
+          messages,
+          'сообщение',
+          'сообщения',
+          'сообщений',
+        )}`,
+      }
+    }
     if (stateIr) {
       return {
         text: `${plural(stateIr.nodes.length, 'состояние', 'состояния', 'состояний')} · ${plural(
@@ -173,13 +192,17 @@ export function App() {
     <DiagramSvg ir={flowchartIr} boxes={boxes} layout={layout} svgRef={svgRef} />
   ) : stateIr && stateBoxes && stateLayout ? (
     <StateSvg ir={stateIr} boxes={stateBoxes} layout={stateLayout} svgRef={svgRef} />
+  ) : sequenceIr && sequenceLayout ? (
+    <SequenceSvg ir={sequenceIr} layout={sequenceLayout} svgRef={svgRef} />
   ) : null
 
   const zoomSize = layout
     ? { width: layout.width, height: layout.height }
     : stateLayout
       ? { width: stateLayout.width, height: stateLayout.height }
-      : null
+      : sequenceLayout
+        ? { width: sequenceLayout.width, height: sequenceLayout.height }
+        : null
 
   // НЕ использовать svgRef в рендере: реф не триггерит перерисовку, и после первого
   // рендера кнопки оставались задизейбленными до следующего взаимодействия.

@@ -13,7 +13,7 @@
 
 export const IR_VERSION = 1 as const
 
-export type DiagramType = 'flowchart' | 'timeline' | 'state'
+export type DiagramType = 'flowchart' | 'timeline' | 'state' | 'sequence'
 
 export type Direction = 'TB' | 'BT' | 'LR' | 'RL'
 
@@ -166,8 +166,30 @@ export interface StateIR extends BaseIR {
   groups: StateGroup[]
 }
 
-export type DiagramIR = FlowchartIR | TimelineIR | StateIR
+export interface SeqActor {
+  id: string
+  name: string
+  kind: 'participant' | 'actor'
+}
+
+export type SeqBlockKind = 'loop' | 'alt' | 'opt' | 'par' | 'rect'
+
+export type SeqItem =
+  | { kind: 'message'; id: string; from: string; to: string; text: string; style: 'solid' | 'dashed' }
+  | { kind: 'note'; id: string; text: string; from: string }
+  | { kind: 'blockStart'; id: string; block: SeqBlockKind; text: string }
+  | { kind: 'blockElse'; id: string; text: string }
+  | { kind: 'blockEnd'; id: string }
+
+export interface SequenceIR extends BaseIR {
+  type: 'sequence'
+  actors: SeqActor[]
+  items: SeqItem[]
+}
+
+export type DiagramIR = FlowchartIR | TimelineIR | StateIR | SequenceIR
 
 export const isFlowchart = (ir: DiagramIR): ir is FlowchartIR => ir.type === 'flowchart'
 export const isTimeline = (ir: DiagramIR): ir is TimelineIR => ir.type === 'timeline'
 export const isState = (ir: DiagramIR): ir is StateIR => ir.type === 'state'
+export const isSequence = (ir: DiagramIR): ir is SequenceIR => ir.type === 'sequence'

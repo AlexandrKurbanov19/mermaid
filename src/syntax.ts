@@ -105,6 +105,18 @@ export const SYNTAX_GROUPS: SyntaxGroup[] = [
       },
     ],
   },
+  {
+    id: 'sequence',
+    title: 'Sequence-диаграмма',
+    items: [
+      {
+        id: 'sequence-basic',
+        title: 'Сообщения и блоки',
+        note: '->> сплошная, -->> пунктир; loop/alt/opt/par',
+        code: 'sequenceDiagram\n    Client->>API: запрос\n    API-->>Client: ответ\n    alt Успех\n      API->>Client: 200 OK\n    else Ошибка\n      API->>Client: 500\n    end',
+      },
+    ],
+  },
 ]
 
 export const SYNTAX_TOTAL = SYNTAX_GROUPS.reduce((sum, group) => sum + group.items.length, 0)
