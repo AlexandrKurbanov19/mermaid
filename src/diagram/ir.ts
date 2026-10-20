@@ -13,7 +13,7 @@
 
 export const IR_VERSION = 1 as const
 
-export type DiagramType = 'flowchart' | 'timeline' | 'state' | 'sequence' | 'class' | 'er'
+export type DiagramType = 'flowchart' | 'timeline' | 'state' | 'sequence' | 'class' | 'er' | 'mindmap'
 
 export type Direction = 'TB' | 'BT' | 'LR' | 'RL'
 
@@ -247,7 +247,18 @@ export interface ERIR extends BaseIR {
   relationships: Relationship[]
 }
 
-export type DiagramIR = FlowchartIR | TimelineIR | StateIR | SequenceIR | ClassIR | ERIR
+export interface MindNode {
+  id: string
+  text: TextBlock
+  children: MindNode[]
+}
+
+export interface MindmapIR extends BaseIR {
+  type: 'mindmap'
+  root: MindNode
+}
+
+export type DiagramIR = FlowchartIR | TimelineIR | StateIR | SequenceIR | ClassIR | ERIR | MindmapIR
 
 export const isFlowchart = (ir: DiagramIR): ir is FlowchartIR => ir.type === 'flowchart'
 export const isTimeline = (ir: DiagramIR): ir is TimelineIR => ir.type === 'timeline'
@@ -255,3 +266,4 @@ export const isState = (ir: DiagramIR): ir is StateIR => ir.type === 'state'
 export const isSequence = (ir: DiagramIR): ir is SequenceIR => ir.type === 'sequence'
 export const isClass = (ir: DiagramIR): ir is ClassIR => ir.type === 'class'
 export const isEr = (ir: DiagramIR): ir is ERIR => ir.type === 'er'
+export const isMindmap = (ir: DiagramIR): ir is MindmapIR => ir.type === 'mindmap'

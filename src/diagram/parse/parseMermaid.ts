@@ -5,6 +5,7 @@ import { normalizeState } from './normalizeState'
 import { normalizeSequence } from './normalizeSequence'
 import { normalizeClass } from './normalizeClass'
 import { normalizeEr } from './normalizeEr'
+import { normalizeMindmap } from './normalizeMindmap'
 
 /**
  * Шаг [1] пайплайна: Mermaid-разметка -> IR.
@@ -45,6 +46,7 @@ const STATE_TYPES = new Set(['stateDiagram', 'stateDiagram-v2', 'state'])
 const SEQUENCE_TYPES = new Set(['sequence'])
 const CLASS_TYPES = new Set(['classDiagram', 'class'])
 const ER_TYPES = new Set(['er', 'erDiagram'])
+const MINDMAP_TYPES = new Set(['mindmap'])
 
 function extractLine(err: unknown): number | undefined {
   if (typeof err !== 'object' || err === null) return undefined
@@ -90,6 +92,13 @@ export async function parseMermaid(text: string): Promise<ParseResult> {
     const type: string = diagram?.type ?? ''
     const db = diagram?.db
 
+    if (MINDMAP_TYPES.has(type)) {
+      if (!db || typeof db.getMindmap !== 'function') {
+        return { ok: false, error: { kind: 'unsupported-type', message: 'Не удалось разобрать mindmap.' } }
+      }
+      return { ok: true, ir: normalizeMindmap(db, source) }
+    }
+
     if (ER_TYPES.has(type)) {
       if (!db || typeof db.getEntities !== 'function') {
         return { ok: false, error: { kind: 'unsupported-type', message: 'Не удалось разобрать ER-диаграмму.' } }
@@ -123,7 +132,7 @@ export async function parseMermaid(text: string): Promise<ParseResult> {
         ok: false,
         error: {
           kind: 'unsupported-type',
-          message: `Тип диаграммы «${type}» пока не поддерживается. Доступны flowchart, state, sequence, class и ER.`,
+          message: `Тип диаграммы «${type}» пока не поддерживается. Доступны flowchart, state, sequence, class, ER и mindmap.`,
         },
       }
     }

@@ -319,8 +319,20 @@ export const EXAMPLES: Example[] = [
     }`,
   },
   {
+    id: 'mindmap',
+    title: '32. Mindmap',
+    checks: 'mindmap: дерево слева направо',
+    source: `mindmap
+  root(Старт)
+    Ветка A
+      Лист A1
+      Лист A2
+    Ветка B
+      Лист B1`,
+  },
+  {
     id: 'error-syntax',
-    title: '32. ОШИБКА: битый синтаксис',
+    title: '33. ОШИБКА: битый синтаксис',
     checks: 'плашка ошибки, превью не падает',
     source: `flowchart TD
     A[Старт] -->
@@ -328,7 +340,7 @@ export const EXAMPLES: Example[] = [
   },
   {
     id: 'error-type',
-    title: '33. ОШИБКА: другой тип диаграммы',
+    title: '34. ОШИБКА: другой тип диаграммы',
     checks: 'sequenceDiagram в v1 не поддерживается',
     source: `sequenceDiagram
     A->>B: привет`,

@@ -141,6 +141,18 @@ export const SYNTAX_GROUPS: SyntaxGroup[] = [
       },
     ],
   },
+  {
+    id: 'mindmap',
+    title: 'Mindmap',
+    items: [
+      {
+        id: 'mindmap-basic',
+        title: 'Дерево',
+        note: 'отступы задают уровень вложенности',
+        code: 'mindmap\n  root(Старт)\n    Ветка A\n      Лист A1\n    Ветка B\n      Лист B1',
+      },
+    ],
+  },
 ]
 
 export const SYNTAX_TOTAL = SYNTAX_GROUPS.reduce((sum, group) => sum + group.items.length, 0)

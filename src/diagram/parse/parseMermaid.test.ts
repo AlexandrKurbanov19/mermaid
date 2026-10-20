@@ -185,7 +185,7 @@ describe('ошибки', () => {
   })
 
   it('неподдерживаемый тип -> unsupported-type', async () => {
-    const res = await parseMermaid('mindmap\n root(Корень)')
+    const res = await parseMermaid('journey\n title Поездка\n section Утро\n  Проснулся: 5')
     expect(res.ok).toBe(false)
     if (res.ok) return
     expect(res.error.kind).toBe('unsupported-type')
