@@ -23,6 +23,8 @@ import { JourneySvg } from './diagram/render/JourneySvg'
 import { layoutJourney } from './diagram/layout/layoutJourney'
 import { GanttSvg } from './diagram/render/GanttSvg'
 import { layoutGantt } from './diagram/layout/layoutGantt'
+import { TimelineSvg } from './diagram/render/TimelineSvg'
+import { layoutTimeline } from './diagram/layout/layoutTimeline'
 import { ZoomPane } from './diagram/render/ZoomPane'
 import { SyntaxHelp } from './components/SyntaxHelp'
 import { toSvgString, downloadSvg, downloadBlob } from './diagram/export/toSvgString'
@@ -93,6 +95,7 @@ export function App() {
   const mindmapIr = parse.status === 'ok' && parse.ir.type === 'mindmap' ? parse.ir : null
   const journeyIr = parse.status === 'ok' && parse.ir.type === 'journey' ? parse.ir : null
   const ganttIr = parse.status === 'ok' && parse.ir.type === 'gantt' ? parse.ir : null
+  const timelineIr = parse.status === 'ok' && parse.ir.type === 'timeline' ? parse.ir : null
 
   // [3] габариты узлов (fit-text) — синхронно из IR
   const boxes: Record<string, NodeBox> | null = useMemo(
@@ -159,6 +162,11 @@ export function App() {
     [ganttIr],
   )
 
+  const timelineLayout = useMemo(
+    () => (timelineIr ? layoutTimeline(timelineIr, fontSpec, measurer) : null),
+    [timelineIr, fontSpec],
+  )
+
   const stateBoxes: Record<string, NodeBox> | null = useMemo(
     () => (stateIr ? measureStateNodes(stateIr, fontSpec, measurer) : null),
     [stateIr, fontSpec],
@@ -197,6 +205,10 @@ export function App() {
 
 
   const stats = useMemo(() => {
+    if (timelineIr) {
+      const events = timelineIr.points.reduce((sum, p) => sum + p.events.length, 0)
+      return { text: `${plural(timelineIr.points.length, 'точка', 'точки', 'точек')} · ${plural(events, 'событие', 'события', 'событий')}` }
+    }
     if (ganttIr) {
       const tasks = ganttIr.sections.reduce((s, sec) => s + sec.tasks.length, 0)
       return { text: `${plural(ganttIr.sections.length, 'секция', 'секции', 'секций')} · ${plural(tasks, 'задача', 'задачи', 'задач')}` }
@@ -300,6 +312,8 @@ export function App() {
     <JourneySvg ir={journeyIr} layout={journeyLayout} svgRef={svgRef} />
   ) : ganttIr && ganttLayout ? (
     <GanttSvg ir={ganttIr} layout={ganttLayout} svgRef={svgRef} />
+  ) : timelineIr && timelineLayout ? (
+    <TimelineSvg ir={timelineIr} layout={timelineLayout} svgRef={svgRef} />
   ) : null
 
   const zoomSize = layout
@@ -318,7 +332,9 @@ export function App() {
                 ? { width: journeyLayout.width, height: journeyLayout.height }
                 : ganttLayout
                   ? { width: ganttLayout.width, height: ganttLayout.height }
-                  : null
+                  : timelineLayout
+                    ? { width: timelineLayout.width, height: timelineLayout.height }
+                    : null
 
   // НЕ использовать svgRef в рендере: реф не триггерит перерисовку, и после первого
   // рендера кнопки оставались задизейбленными до следующего взаимодействия.

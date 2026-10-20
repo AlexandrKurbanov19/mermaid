@@ -177,6 +177,18 @@ export const SYNTAX_GROUPS: SyntaxGroup[] = [
       },
     ],
   },
+  {
+    id: 'timeline',
+    title: 'Timeline',
+    items: [
+      {
+        id: 'timeline-basic',
+        title: 'Годы и события',
+        note: 'подписи чередуются сверху/снизу',
+        code: 'timeline\n    title История\n    2022 : Запуск\n    2023 : Рост : Две программы\n    2024 : Масштаб',
+      },
+    ],
+  },
 ]
 
 export const SYNTAX_TOTAL = SYNTAX_GROUPS.reduce((sum, group) => sum + group.items.length, 0)

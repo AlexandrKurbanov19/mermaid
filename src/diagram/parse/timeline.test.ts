@@ -32,13 +32,11 @@ async function flowchart(source: string): Promise<FlowchartIR> {
 const text = (ir: TimelineIR, i: number) =>
   ir.points[i].label.lines.map((line) => line.map((r) => r.text).join('')).join(' ')
 
-describe('timeline: в v1 отключён', () => {
-  it('parseMermaid отклоняет timeline', async () => {
+describe('timeline: подключён в v2', () => {
+  it('parseMermaid принимает timeline', async () => {
     const res = await parseMermaid('timeline\n 2022 : Запуск')
-    expect(res.ok).toBe(false)
-    if (res.ok) return
-    expect(res.error.kind).toBe('unsupported-type')
-    expect(res.error.message).toContain('flowchart')
+    expect(res.ok).toBe(true)
+    if (res.ok) expect(res.ir.type).toBe('timeline')
   })
 })
 

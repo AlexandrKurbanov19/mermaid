@@ -355,8 +355,18 @@ export const EXAMPLES: Example[] = [
       Разработка :a3, 2024-01-10, 10d`,
   },
   {
+    id: 'timeline',
+    title: '35. Timeline',
+    checks: 'timeline: ось, кружки, подписи сверху/снизу',
+    source: `timeline
+    title История продукта
+    2022 : Запуск
+    2023 : Две программы : Рост
+    2024 : Масштабирование`,
+  },
+  {
     id: 'error-syntax',
-    title: '35. ОШИБКА: битый синтаксис',
+    title: '36. ОШИБКА: битый синтаксис',
     checks: 'плашка ошибки, превью не падает',
     source: `flowchart TD
     A[Старт] -->
@@ -364,7 +374,7 @@ export const EXAMPLES: Example[] = [
   },
   {
     id: 'error-type',
-    title: '36. ОШИБКА: другой тип диаграммы',
+    title: '37. ОШИБКА: другой тип диаграммы',
     checks: 'sequenceDiagram в v1 не поддерживается',
     source: `sequenceDiagram
     A->>B: привет`,
