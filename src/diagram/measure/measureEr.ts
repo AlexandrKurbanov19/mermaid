@@ -3,8 +3,8 @@ import type { NodeBox } from './measureNode'
 import type { FontSpec, TextMeasurer } from './textMetrics'
 
 const PADDING = 14
-const NAME_H = 26
-const ATTR_H = 20
+const NAME_H = 32
+const ATTR_H = 22
 
 export interface EntityDetails {
   name: string
@@ -25,7 +25,7 @@ export function measureErNodes(ir: ERIR, font: FontSpec, measurer: TextMeasurer)
     const nameW = measurer.measure(e.name, { ...font, weight: 600 })
     const maxAttr = Math.max(0, ...attrs.map((a) => measurer.measure(a.line, font)))
     const width = Math.max(120, Math.ceil(Math.max(nameW, maxAttr)) + PADDING * 2 + 24)
-    const height = NAME_H + attrs.length * ATTR_H + 12
+    const height = NAME_H + attrs.length * ATTR_H + 16
 
     boxes[e.id] = {
       width,

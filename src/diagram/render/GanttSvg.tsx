@@ -36,8 +36,8 @@ export function GanttSvg({ ir, layout, svgRef }: Props) {
       <g>
         {layout.axis.ticks.map((tick, i) => (
           <g key={i}>
-            <line x1={tick.x} y1={16} x2={tick.x} y2={layout.height - 24} stroke={color.borderSubtle} strokeWidth={1} />
-            <text x={tick.x} y={10} textAnchor="middle" fontSize={11} fill={color.textSecondary}>
+            <line x1={tick.x} y1={ir.title ? 44 : 16} x2={tick.x} y2={layout.height - 24} stroke={color.borderSubtle} strokeWidth={1} />
+            <text x={tick.x} y={ir.title ? 38 : 10} textAnchor="middle" fontSize={11} fill={color.textSecondary}>
               {tick.label}
             </text>
           </g>

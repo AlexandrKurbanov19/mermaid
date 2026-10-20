@@ -104,27 +104,27 @@ export function ErSvg({ ir, boxes, details, layout, svgRef }: Props) {
 function Cardinality({ rel, points }: { rel: Relationship; points: Point[] }) {
   const from = points[0]
   const to = points[points.length - 1]
-  const dirFrom = points.length > 1 ? { x: points[1].x - from.x, y: points[1].y - from.y } : { x: 1, y: 0 }
-  const dirTo = points.length > 1 ? { x: to.x - points[points.length - 2].x, y: to.y - points[points.length - 2].y } : { x: 1, y: 0 }
 
-  const labels: { card?: string; at: Point; dir: Point }[] = [
-    { card: rel.cardA, at: from, dir: dirFrom },
-    { card: rel.cardB, at: to, dir: dirTo },
-  ]
+  const norm = (dx: number, dy: number) => {
+    const len = Math.hypot(dx, dy) || 1
+    return { x: dx / len, y: dy / len }
+  }
+
+  // кардинальность ставим В зазор: у from — по направлению линии, у to — против
+  const fromDir = points.length > 1 ? norm(points[1].x - from.x, points[1].y - from.y) : { x: 1, y: 0 }
+  const toDir = points.length > 1 ? norm(to.x - points[points.length - 2].x, to.y - points[points.length - 2].y) : { x: 1, y: 0 }
+
+  const items: { card: string; x: number; y: number }[] = []
+  if (rel.cardA && CARD_LABEL[rel.cardA]) items.push({ card: CARD_LABEL[rel.cardA], x: from.x + fromDir.x * 14, y: from.y + fromDir.y * 14 })
+  if (rel.cardB && CARD_LABEL[rel.cardB]) items.push({ card: CARD_LABEL[rel.cardB], x: to.x - toDir.x * 14, y: to.y - toDir.y * 14 })
 
   return (
     <g>
-      {labels.map((l, i) => {
-        if (!l.card || !CARD_LABEL[l.card]) return null
-        const len = Math.hypot(l.dir.x, l.dir.y) || 1
-        const x = l.at.x - (l.dir.x / len) * 10
-        const y = l.at.y - (l.dir.y / len) * 10
-        return (
-          <text key={i} x={x} y={y - 6} textAnchor="middle" fontSize={13} fontWeight={600} fill={color.textPrimary}>
-            {CARD_LABEL[l.card]}
-          </text>
-        )
-      })}
+      {items.map((l, i) => (
+        <text key={i} x={l.x} y={l.y - 7} textAnchor="middle" fontSize={13} fontWeight={600} fill={color.textPrimary}>
+          {l.card}
+        </text>
+      ))}
     </g>
   )
 }
@@ -133,12 +133,12 @@ function EntityBox({ details, x, y, width, height }: { details: EntityDetails; x
   return (
     <g>
       <rect x={x} y={y} width={width} height={height} rx={8} fill={color.canvas} stroke={color.borderSubtle} strokeWidth={size.strokeWidth} />
-      <text x={x + width / 2} y={y + 17} textAnchor="middle" dominantBaseline="central" fontSize={15} fontWeight={600} fill={color.textPrimary}>
+      <text x={x + width / 2} y={y + 20} textAnchor="middle" dominantBaseline="central" fontSize={15} fontWeight={600} fill={color.textPrimary}>
         {details.name}
       </text>
-      <line x1={x} y1={y + 26} x2={x + width} y2={y + 26} stroke={color.borderSubtle} strokeWidth={1} />
+      <line x1={x} y1={y + 32} x2={x + width} y2={y + 32} stroke={color.borderSubtle} strokeWidth={1} />
       {details.attributes.map((a, i) => (
-        <text key={i} x={x + 12} y={y + 40 + i * 20} fontSize={13} fill={color.textPrimary}>
+        <text key={i} x={x + 12} y={y + 48 + i * 22} fontSize={13} fill={color.textPrimary}>
           {a.keys.includes('PK') ? '🔑 ' : a.keys.includes('FK') ? '🔗 ' : ''}
           {a.line}
         </text>

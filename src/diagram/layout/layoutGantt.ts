@@ -39,7 +39,7 @@ export function layoutGantt(ir: GanttIR): GanttLayout {
   const xOf = (t: number) => LABEL_W + ((t - min) / range) * TL_W
 
   const rows: GanttRow[] = []
-  let y = PADDING + (ir.title ? 28 : 0)
+  let y = PADDING + (ir.title ? 60 : 24)
 
   for (const section of ir.sections) {
     rows.push({ y, kind: 'section', name: section.name })
@@ -65,7 +65,7 @@ export function layoutGantt(ir: GanttIR): GanttLayout {
   })
 
   return {
-    width: LABEL_W + TL_W + PADDING,
+    width: LABEL_W + TL_W + 80,
     height: y + PADDING,
     rows,
     axis: { x1: LABEL_W, x2: LABEL_W + TL_W, ticks },

@@ -139,7 +139,7 @@ export function App() {
       return
     }
     let cancelled = false
-    layoutDiagram(erToFlowchart(erIr), erMeasure.boxes).then((result) => {
+    layoutDiagram(erToFlowchart(erIr), erMeasure.boxes, { nodeSpacing: 110, layerSpacing: 90 }).then((result) => {
       if (!cancelled) setErLayout(result)
     })
     return () => {
