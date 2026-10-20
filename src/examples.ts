@@ -289,8 +289,23 @@ export const EXAMPLES: Example[] = [
     end`,
   },
   {
+    id: 'class',
+    title: '30. Class-диаграмма',
+    checks: 'classDiagram: классы с полями/методами, наследование',
+    source: `classDiagram
+    class Animal {
+      +String name
+      +makeSound() void
+    }
+    class Dog {
+      +bark() String
+    }
+    Animal <|-- Dog : наследует
+    Dog ..> Owner : использует`,
+  },
+  {
     id: 'error-syntax',
-    title: '30. ОШИБКА: битый синтаксис',
+    title: '31. ОШИБКА: битый синтаксис',
     checks: 'плашка ошибки, превью не падает',
     source: `flowchart TD
     A[Старт] -->
@@ -298,7 +313,7 @@ export const EXAMPLES: Example[] = [
   },
   {
     id: 'error-type',
-    title: '31. ОШИБКА: другой тип диаграммы',
+    title: '32. ОШИБКА: другой тип диаграммы',
     checks: 'sequenceDiagram в v1 не поддерживается',
     source: `sequenceDiagram
     A->>B: привет`,

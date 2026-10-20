@@ -3,6 +3,7 @@ import type { DiagramIR } from '../ir'
 import { normalize } from './normalize'
 import { normalizeState } from './normalizeState'
 import { normalizeSequence } from './normalizeSequence'
+import { normalizeClass } from './normalizeClass'
 
 /**
  * Шаг [1] пайплайна: Mermaid-разметка -> IR.
@@ -41,6 +42,7 @@ function ensureInit() {
 const FLOWCHART_TYPES = new Set(['flowchart', 'flowchart-v2', 'graph', 'flow'])
 const STATE_TYPES = new Set(['stateDiagram', 'stateDiagram-v2', 'state'])
 const SEQUENCE_TYPES = new Set(['sequence'])
+const CLASS_TYPES = new Set(['classDiagram', 'class'])
 
 function extractLine(err: unknown): number | undefined {
   if (typeof err !== 'object' || err === null) return undefined
@@ -86,6 +88,13 @@ export async function parseMermaid(text: string): Promise<ParseResult> {
     const type: string = diagram?.type ?? ''
     const db = diagram?.db
 
+    if (CLASS_TYPES.has(type)) {
+      if (!db || typeof db.getClasses !== 'function') {
+        return { ok: false, error: { kind: 'unsupported-type', message: 'Не удалось разобрать class-диаграмму.' } }
+      }
+      return { ok: true, ir: normalizeClass(db, source) }
+    }
+
     if (SEQUENCE_TYPES.has(type)) {
       if (!db || typeof db.getMessages !== 'function') {
         return { ok: false, error: { kind: 'unsupported-type', message: 'Не удалось разобрать sequence-диаграмму.' } }
@@ -105,7 +114,7 @@ export async function parseMermaid(text: string): Promise<ParseResult> {
         ok: false,
         error: {
           kind: 'unsupported-type',
-          message: `Тип диаграммы «${type}» пока не поддерживается. Доступны flowchart, state и sequence.`,
+          message: `Тип диаграммы «${type}» пока не поддерживается. Доступны flowchart, state, sequence и class.`,
         },
       }
     }

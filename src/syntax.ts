@@ -117,6 +117,18 @@ export const SYNTAX_GROUPS: SyntaxGroup[] = [
       },
     ],
   },
+  {
+    id: 'class',
+    title: 'Class-диаграмма',
+    items: [
+      {
+        id: 'class-basic',
+        title: 'Классы и отношения',
+        note: '<|-- наследование, *-- композиция, o-- агрегация, --> ассоциация, ..> зависимость',
+        code: 'classDiagram\n    class Animal {\n      +String name\n      +makeSound() void\n    }\n    Animal <|-- Dog : наследует',
+      },
+    ],
+  },
 ]
 
 export const SYNTAX_TOTAL = SYNTAX_GROUPS.reduce((sum, group) => sum + group.items.length, 0)

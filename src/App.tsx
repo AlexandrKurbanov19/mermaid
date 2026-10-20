@@ -11,6 +11,9 @@ import { measureStateNodes } from './diagram/measure/measureState'
 import { stateToFlowchart } from './diagram/layout/stateAdapter'
 import { SequenceSvg } from './diagram/render/SequenceSvg'
 import { layoutSequence } from './diagram/layout/layoutSequence'
+import { ClassSvg } from './diagram/render/ClassSvg'
+import { measureClassNodes, type ClassDetails } from './diagram/measure/measureClass'
+import { classToFlowchart } from './diagram/layout/classAdapter'
 import { ZoomPane } from './diagram/render/ZoomPane'
 import { SyntaxHelp } from './components/SyntaxHelp'
 import { toSvgString, downloadSvg, downloadBlob } from './diagram/export/toSvgString'
@@ -76,6 +79,7 @@ export function App() {
   const flowchartIr = parse.status === 'ok' && parse.ir.type === 'flowchart' ? parse.ir : null
   const stateIr = parse.status === 'ok' && parse.ir.type === 'state' ? parse.ir : null
   const sequenceIr = parse.status === 'ok' && parse.ir.type === 'sequence' ? parse.ir : null
+  const classIr = parse.status === 'ok' && parse.ir.type === 'class' ? parse.ir : null
 
   // [3] габариты узлов (fit-text) — синхронно из IR
   const boxes: Record<string, NodeBox> | null = useMemo(
@@ -86,6 +90,26 @@ export function App() {
     () => (sequenceIr ? layoutSequence(sequenceIr, measurer, fontSpec) : null),
     [sequenceIr, fontSpec],
   )
+
+  const classMeasure = useMemo(
+    () => (classIr ? measureClassNodes(classIr, fontSpec, measurer) : null),
+    [classIr, fontSpec],
+  )
+
+  const [classLayout, setClassLayout] = useState<Layout | null>(null)
+  useEffect(() => {
+    if (!classIr || !classMeasure) {
+      setClassLayout(null)
+      return
+    }
+    let cancelled = false
+    layoutDiagram(classToFlowchart(classIr), classMeasure.boxes).then((result) => {
+      if (!cancelled) setClassLayout(result)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [classIr, classMeasure])
 
   const stateBoxes: Record<string, NodeBox> | null = useMemo(
     () => (stateIr ? measureStateNodes(stateIr, fontSpec, measurer) : null),
@@ -125,6 +149,12 @@ export function App() {
 
 
   const stats = useMemo(() => {
+    if (classIr) {
+      const rels = classIr.relations.length
+      return {
+        text: `${plural(classIr.nodes.length, 'класс', 'класса', 'классов')} · ${plural(rels, 'связь', 'связи', 'связей')}`,
+      }
+    }
     if (sequenceIr) {
       const messages = sequenceIr.items.filter((i) => i.kind === 'message').length
       return {
@@ -194,6 +224,8 @@ export function App() {
     <StateSvg ir={stateIr} boxes={stateBoxes} layout={stateLayout} svgRef={svgRef} />
   ) : sequenceIr && sequenceLayout ? (
     <SequenceSvg ir={sequenceIr} layout={sequenceLayout} svgRef={svgRef} />
+  ) : classIr && classMeasure && classLayout ? (
+    <ClassSvg ir={classIr} boxes={classMeasure.boxes} details={classMeasure.details} layout={classLayout} svgRef={svgRef} />
   ) : null
 
   const zoomSize = layout
@@ -202,7 +234,9 @@ export function App() {
       ? { width: stateLayout.width, height: stateLayout.height }
       : sequenceLayout
         ? { width: sequenceLayout.width, height: sequenceLayout.height }
-        : null
+        : classLayout
+          ? { width: classLayout.width, height: classLayout.height }
+          : null
 
   // НЕ использовать svgRef в рендере: реф не триггерит перерисовку, и после первого
   // рендера кнопки оставались задизейбленными до следующего взаимодействия.
