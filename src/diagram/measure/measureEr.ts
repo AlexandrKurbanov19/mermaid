@@ -3,8 +3,15 @@ import type { NodeBox } from './measureNode'
 import type { FontSpec, TextMeasurer } from './textMetrics'
 
 const PADDING = 14
-const NAME_H = 32
-const ATTR_H = 22
+
+/** Геометрия ER-сущности: те же отступы, что у class. */
+export const ER_GEOM = {
+  nameCenter: 26,
+  divider: 36,
+  attrStart: 60,   // базовая линия первого атрибута
+  attrH: 22,
+  bottomPad: 14,
+}
 
 export interface EntityDetails {
   name: string
@@ -25,7 +32,7 @@ export function measureErNodes(ir: ERIR, font: FontSpec, measurer: TextMeasurer)
     const nameW = measurer.measure(e.name, { ...font, weight: 600 })
     const maxAttr = Math.max(0, ...attrs.map((a) => measurer.measure(a.line, font)))
     const width = Math.max(120, Math.ceil(Math.max(nameW, maxAttr)) + PADDING * 2 + 24)
-    const height = NAME_H + attrs.length * ATTR_H + 16
+    const height = ER_GEOM.divider + attrs.length * ER_GEOM.attrH + ER_GEOM.bottomPad
 
     boxes[e.id] = {
       width,

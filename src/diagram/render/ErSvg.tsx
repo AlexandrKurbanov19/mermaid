@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { ERIR, Relationship } from '../ir'
 import type { NodeBox } from '../measure/measureNode'
-import type { EntityDetails } from '../measure/measureEr'
+import { ER_GEOM, type EntityDetails } from '../measure/measureEr'
 import type { Layout, Point } from '../layout/layoutElk'
 import { buildOrthogonalPath } from '../layout/layoutElk'
 import { erToFlowchart } from '../layout/erAdapter'
@@ -133,12 +133,12 @@ function EntityBox({ details, x, y, width, height }: { details: EntityDetails; x
   return (
     <g>
       <rect x={x} y={y} width={width} height={height} rx={8} fill={color.canvas} stroke={color.borderSubtle} strokeWidth={size.strokeWidth} />
-      <text x={x + width / 2} y={y + 20} textAnchor="middle" dominantBaseline="central" fontSize={15} fontWeight={600} fill={color.textPrimary}>
+      <text x={x + width / 2} y={y + ER_GEOM.nameCenter} textAnchor="middle" dominantBaseline="central" fontSize={15} fontWeight={600} fill={color.textPrimary}>
         {details.name}
       </text>
-      <line x1={x} y1={y + 32} x2={x + width} y2={y + 32} stroke={color.borderSubtle} strokeWidth={1} />
+      <line x1={x} y1={y + ER_GEOM.divider} x2={x + width} y2={y + ER_GEOM.divider} stroke={color.borderSubtle} strokeWidth={1} />
       {details.attributes.map((a, i) => (
-        <text key={i} x={x + 12} y={y + 48 + i * 22} fontSize={13} fill={color.textPrimary}>
+        <text key={i} x={x + 12} y={y + ER_GEOM.attrStart + i * ER_GEOM.attrH} fontSize={13} fill={color.textPrimary}>
           {a.keys.includes('PK') ? '🔑 ' : a.keys.includes('FK') ? '🔗 ' : ''}
           {a.line}
         </text>
