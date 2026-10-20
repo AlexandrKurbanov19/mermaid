@@ -7,6 +7,7 @@ import { normalizeClass } from './normalizeClass'
 import { normalizeEr } from './normalizeEr'
 import { normalizeMindmap } from './normalizeMindmap'
 import { normalizeJourney } from './normalizeJourney'
+import { normalizeGantt } from './normalizeGantt'
 
 /**
  * Шаг [1] пайплайна: Mermaid-разметка -> IR.
@@ -49,6 +50,7 @@ const CLASS_TYPES = new Set(['classDiagram', 'class'])
 const ER_TYPES = new Set(['er', 'erDiagram'])
 const MINDMAP_TYPES = new Set(['mindmap'])
 const JOURNEY_TYPES = new Set(['journey'])
+const GANTT_TYPES = new Set(['gantt'])
 
 function extractLine(err: unknown): number | undefined {
   if (typeof err !== 'object' || err === null) return undefined
@@ -93,6 +95,13 @@ export async function parseMermaid(text: string): Promise<ParseResult> {
   try {
     const type: string = diagram?.type ?? ''
     const db = diagram?.db
+
+    if (GANTT_TYPES.has(type)) {
+      if (!db || typeof db.getTasks !== 'function') {
+        return { ok: false, error: { kind: 'unsupported-type', message: 'Не удалось разобрать gantt.' } }
+      }
+      return { ok: true, ir: normalizeGantt(db, source) }
+    }
 
     if (JOURNEY_TYPES.has(type)) {
       if (!db || typeof db.getTasks !== 'function') {
@@ -141,7 +150,7 @@ export async function parseMermaid(text: string): Promise<ParseResult> {
         ok: false,
         error: {
           kind: 'unsupported-type',
-          message: `Тип диаграммы «${type}» пока не поддерживается. Доступны flowchart, state, sequence, class, ER, mindmap и journey.`,
+          message: `Тип диаграммы «${type}» пока не поддерживается. Доступны flowchart, state, sequence, class, ER, mindmap, journey и gantt.`,
         },
       }
     }

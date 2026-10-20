@@ -165,6 +165,18 @@ export const SYNTAX_GROUPS: SyntaxGroup[] = [
       },
     ],
   },
+  {
+    id: 'gantt',
+    title: 'Gantt',
+    items: [
+      {
+        id: 'gantt-basic',
+        title: 'Задачи и сроки',
+        note: 'секция, задача :id, дата, длительность (5d/10d)',
+        code: 'gantt\n    title План\n    section Этап 1\n      Дизайн :a1, 2024-01-01, 5d\n      Прототип :a2, after a1, 4d',
+      },
+    ],
+  },
 ]
 
 export const SYNTAX_TOTAL = SYNTAX_GROUPS.reduce((sum, group) => sum + group.items.length, 0)

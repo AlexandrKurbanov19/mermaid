@@ -343,8 +343,20 @@ export const EXAMPLES: Example[] = [
       Работа: 2: Я, Команда`,
   },
   {
+    id: 'gantt',
+    title: '34. Gantt',
+    checks: 'gantt: шкала времени, секции, задачи-бары',
+    source: `gantt
+    title План проекта
+    section Этап 1
+      Дизайн :a1, 2024-01-01, 5d
+      Прототип :a2, after a1, 4d
+    section Этап 2
+      Разработка :a3, 2024-01-10, 10d`,
+  },
+  {
     id: 'error-syntax',
-    title: '34. ОШИБКА: битый синтаксис',
+    title: '35. ОШИБКА: битый синтаксис',
     checks: 'плашка ошибки, превью не падает',
     source: `flowchart TD
     A[Старт] -->
@@ -352,7 +364,7 @@ export const EXAMPLES: Example[] = [
   },
   {
     id: 'error-type',
-    title: '35. ОШИБКА: другой тип диаграммы',
+    title: '36. ОШИБКА: другой тип диаграммы',
     checks: 'sequenceDiagram в v1 не поддерживается',
     source: `sequenceDiagram
     A->>B: привет`,

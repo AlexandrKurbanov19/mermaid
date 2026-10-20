@@ -185,7 +185,7 @@ describe('ошибки', () => {
   })
 
   it('неподдерживаемый тип -> unsupported-type', async () => {
-    const res = await parseMermaid('gantt\n title План\n section Этап\n Задача :a1, 2024-01-01, 5d')
+    const res = await parseMermaid('xychart-beta\n x-axis [a, b]\n y-axis 0 --> 10')
     expect(res.ok).toBe(false)
     if (res.ok) return
     expect(res.error.kind).toBe('unsupported-type')

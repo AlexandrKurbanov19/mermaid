@@ -21,6 +21,8 @@ import { MindmapSvg } from './diagram/render/MindmapSvg'
 import { layoutMindmap } from './diagram/layout/layoutMindmap'
 import { JourneySvg } from './diagram/render/JourneySvg'
 import { layoutJourney } from './diagram/layout/layoutJourney'
+import { GanttSvg } from './diagram/render/GanttSvg'
+import { layoutGantt } from './diagram/layout/layoutGantt'
 import { ZoomPane } from './diagram/render/ZoomPane'
 import { SyntaxHelp } from './components/SyntaxHelp'
 import { toSvgString, downloadSvg, downloadBlob } from './diagram/export/toSvgString'
@@ -90,6 +92,7 @@ export function App() {
   const erIr = parse.status === 'ok' && parse.ir.type === 'er' ? parse.ir : null
   const mindmapIr = parse.status === 'ok' && parse.ir.type === 'mindmap' ? parse.ir : null
   const journeyIr = parse.status === 'ok' && parse.ir.type === 'journey' ? parse.ir : null
+  const ganttIr = parse.status === 'ok' && parse.ir.type === 'gantt' ? parse.ir : null
 
   // [3] габариты узлов (fit-text) — синхронно из IR
   const boxes: Record<string, NodeBox> | null = useMemo(
@@ -151,6 +154,11 @@ export function App() {
     [journeyIr, fontSpec],
   )
 
+  const ganttLayout = useMemo(
+    () => (ganttIr ? layoutGantt(ganttIr) : null),
+    [ganttIr],
+  )
+
   const stateBoxes: Record<string, NodeBox> | null = useMemo(
     () => (stateIr ? measureStateNodes(stateIr, fontSpec, measurer) : null),
     [stateIr, fontSpec],
@@ -189,6 +197,10 @@ export function App() {
 
 
   const stats = useMemo(() => {
+    if (ganttIr) {
+      const tasks = ganttIr.sections.reduce((s, sec) => s + sec.tasks.length, 0)
+      return { text: `${plural(ganttIr.sections.length, 'секция', 'секции', 'секций')} · ${plural(tasks, 'задача', 'задачи', 'задач')}` }
+    }
     if (journeyIr) {
       const tasks = journeyIr.sections.reduce((s, sec) => s + sec.tasks.length, 0)
       return { text: `${plural(journeyIr.sections.length, 'секция', 'секции', 'секций')} · ${plural(tasks, 'задача', 'задачи', 'задач')}` }
@@ -286,6 +298,8 @@ export function App() {
     <MindmapSvg ir={mindmapIr} layout={mindmapLayout} svgRef={svgRef} />
   ) : journeyIr && journeyLayout ? (
     <JourneySvg ir={journeyIr} layout={journeyLayout} svgRef={svgRef} />
+  ) : ganttIr && ganttLayout ? (
+    <GanttSvg ir={ganttIr} layout={ganttLayout} svgRef={svgRef} />
   ) : null
 
   const zoomSize = layout
@@ -302,7 +316,9 @@ export function App() {
               ? { width: mindmapLayout.width, height: mindmapLayout.height }
               : journeyLayout
                 ? { width: journeyLayout.width, height: journeyLayout.height }
-                : null
+                : ganttLayout
+                  ? { width: ganttLayout.width, height: ganttLayout.height }
+                  : null
 
   // НЕ использовать svgRef в рендере: реф не триггерит перерисовку, и после первого
   // рендера кнопки оставались задизейбленными до следующего взаимодействия.
